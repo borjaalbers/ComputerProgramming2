@@ -63,5 +63,14 @@ public interface ClassScheduleService {
      * @return true if deletion was successful, false otherwise
      */
     boolean deleteClassSession(long sessionId);
+
+    /**
+     * Assigns a workout plan to a class session.
+     *
+     * @param sessionId the class session ID
+     * @param workoutPlanId the workout plan ID to assign (can be null to remove assignment)
+     * @return true if assignment was successful, false otherwise
+     */
+    boolean assignWorkoutPlanToClass(long sessionId, Long workoutPlanId);
 }
 

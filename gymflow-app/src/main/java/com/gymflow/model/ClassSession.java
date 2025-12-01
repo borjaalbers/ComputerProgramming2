@@ -15,6 +15,7 @@ public class ClassSession {
     private String title;
     private LocalDateTime scheduleTimestamp;
     private int capacity;
+    private Long workoutPlanId;
 
     /**
      * Creates a new ClassSession.
@@ -27,11 +28,27 @@ public class ClassSession {
      */
     public ClassSession(long id, long trainerId, String title, 
                        LocalDateTime scheduleTimestamp, int capacity) {
+        this(id, trainerId, title, scheduleTimestamp, capacity, null);
+    }
+
+    /**
+     * Creates a new ClassSession with workout plan.
+     *
+     * @param id the unique identifier
+     * @param trainerId the ID of the trainer leading this session
+     * @param title the title/name of the class
+     * @param scheduleTimestamp when this class session is scheduled
+     * @param capacity the maximum number of members who can attend
+     * @param workoutPlanId the ID of the associated workout plan (can be null)
+     */
+    public ClassSession(long id, long trainerId, String title, 
+                       LocalDateTime scheduleTimestamp, int capacity, Long workoutPlanId) {
         this.id = id;
         this.trainerId = trainerId;
         this.title = title;
         this.scheduleTimestamp = scheduleTimestamp;
         this.capacity = capacity;
+        this.workoutPlanId = workoutPlanId;
     }
 
     public long getId() {
@@ -64,6 +81,14 @@ public class ClassSession {
 
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+
+    public Long getWorkoutPlanId() {
+        return workoutPlanId;
+    }
+
+    public void setWorkoutPlanId(Long workoutPlanId) {
+        this.workoutPlanId = workoutPlanId;
     }
 
     /**

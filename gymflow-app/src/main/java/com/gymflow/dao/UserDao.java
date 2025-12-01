@@ -33,6 +33,14 @@ public interface UserDao {
     Optional<User> findById(long id);
     
     /**
+     * Finds all users with a specific role.
+     *
+     * @param role the role to filter by
+     * @return list of users with the specified role
+     */
+    java.util.List<User> findByRole(Role role);
+    
+    /**
      * Counts users by role.
      *
      * @param role the role to count

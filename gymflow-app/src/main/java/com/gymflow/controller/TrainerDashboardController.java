@@ -25,6 +25,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import com.gymflow.controller.WorkoutPlanFormController;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
@@ -79,6 +82,9 @@ public class TrainerDashboardController {
 
     @FXML
     private TableColumn<ClassSession, String> classRegisteredColumn;
+
+    @FXML
+    private TableColumn<ClassSession, String> classWorkoutPlanColumn;
 
     @FXML
     private TableView<WorkoutPlan> workoutTable;
@@ -168,6 +174,31 @@ public class TrainerDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
+        
+        classWorkoutPlanColumn.setCellValueFactory(cellData -> {
+            ClassSession session = cellData.getValue();
+            if (session != null && session.getWorkoutPlanId() != null) {
+                // Get workout plan title
+                String workoutTitle = getWorkoutPlanTitle(session.getWorkoutPlanId());
+                return new javafx.beans.property.SimpleStringProperty(workoutTitle);
+            }
+            return new javafx.beans.property.SimpleStringProperty("None");
+        });
+    }
+    
+    /**
+     * Gets the workout plan title from the database.
+     */
+    private String getWorkoutPlanTitle(long workoutPlanId) {
+        try {
+            Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(workoutPlanId);
+            if (plan.isPresent()) {
+                return plan.get().getTitle();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting workout plan title: " + e.getMessage());
+        }
+        return "Unknown";
     }
 
     private void setupWorkoutTable() {
@@ -175,7 +206,9 @@ public class TrainerDashboardController {
         workoutMemberColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null) {
-                return new javafx.beans.property.SimpleStringProperty("Member #" + plan.getMemberId());
+                // Get member name from database
+                String memberName = getMemberName(plan.getMemberId());
+                return new javafx.beans.property.SimpleStringProperty(memberName);
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
@@ -188,6 +221,22 @@ public class TrainerDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
+    }
+    
+    /**
+     * Gets the member's name from the database.
+     */
+    private String getMemberName(long memberId) {
+        try {
+            com.gymflow.dao.UserDao userDao = new com.gymflow.dao.UserDaoImpl();
+            Optional<User> member = userDao.findById(memberId);
+            if (member.isPresent()) {
+                return member.get().getFullName();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting member name: " + e.getMessage());
+        }
+        return "Member #" + memberId;
     }
 
     private void loadClassSessions() {
@@ -320,6 +369,98 @@ public class TrainerDashboardController {
                     }
                 } catch (NumberFormatException e) {
                     showErrorAlert("Error", "Invalid capacity");
+                }
+            }
+        }
+    }
+
+    @FXML
+    private void handleAssignWorkoutPlan() {
+        ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
+        if (selectedSession == null) {
+            showErrorAlert("No Selection", "Please select a class to assign a workout plan");
+            return;
+        }
+
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || selectedSession.getTrainerId() != currentUser.getId()) {
+            showErrorAlert("Error", "You can only assign workout plans to your own classes");
+            return;
+        }
+
+        // Get all workout plans for this trainer
+        List<WorkoutPlan> trainerPlans = workoutService.getWorkoutPlansByTrainer(currentUser.getId());
+        
+        if (trainerPlans.isEmpty()) {
+            showErrorAlert("No Workout Plans", "You need to create workout plans first before assigning them to classes.");
+            return;
+        }
+        
+        // Create a choice dialog
+        javafx.scene.control.ChoiceDialog<String> dialog = new javafx.scene.control.ChoiceDialog<>();
+        dialog.setTitle("Assign Workout Plan");
+        dialog.setHeaderText("Select a workout plan to assign to '" + selectedSession.getTitle() + "'");
+        dialog.setContentText("Workout Plan:");
+        
+        // Create list with "None" option first, then all workout plans
+        ObservableList<String> options = FXCollections.observableArrayList();
+        options.add("None (Remove Assignment)");
+        for (WorkoutPlan plan : trainerPlans) {
+            options.add(plan.getTitle() + " (ID: " + plan.getId() + ")");
+        }
+        
+        dialog.getItems().addAll(options);
+        
+        // Set current selection if class already has a workout plan
+        if (selectedSession.getWorkoutPlanId() != null) {
+            Optional<WorkoutPlan> currentPlan = workoutService.getWorkoutPlanById(selectedSession.getWorkoutPlanId());
+            if (currentPlan.isPresent()) {
+                String currentTitle = currentPlan.get().getTitle() + " (ID: " + currentPlan.get().getId() + ")";
+                if (options.contains(currentTitle)) {
+                    dialog.setSelectedItem(currentTitle);
+                }
+            }
+        } else {
+            dialog.setSelectedItem("None (Remove Assignment)");
+        }
+        
+        Optional<String> result = dialog.showAndWait();
+        
+        if (result.isPresent()) {
+            String selected = result.get();
+            
+            if ("None (Remove Assignment)".equals(selected)) {
+                // Remove assignment
+                boolean success = classScheduleService.assignWorkoutPlanToClass(
+                    selectedSession.getId(), null
+                );
+                
+                if (success) {
+                    showSuccessAlert("Success", "Workout plan assignment removed from class");
+                    loadClassSessions();
+                } else {
+                    showErrorAlert("Error", "Failed to remove workout plan assignment");
+                }
+            } else {
+                // Extract workout plan ID from selection
+                int idStart = selected.lastIndexOf("(ID: ") + 5;
+                int idEnd = selected.lastIndexOf(")");
+                if (idStart > 4 && idEnd > idStart) {
+                    try {
+                        long workoutPlanId = Long.parseLong(selected.substring(idStart, idEnd));
+                        boolean success = classScheduleService.assignWorkoutPlanToClass(
+                            selectedSession.getId(), workoutPlanId
+                        );
+                        
+                        if (success) {
+                            showSuccessAlert("Success", "Workout plan assigned to class successfully!");
+                            loadClassSessions();
+                        } else {
+                            showErrorAlert("Error", "Failed to assign workout plan to class");
+                        }
+                    } catch (NumberFormatException e) {
+                        showErrorAlert("Error", "Invalid workout plan selection");
+                    }
                 }
             }
         }
@@ -463,44 +604,65 @@ public class TrainerDashboardController {
             return;
         }
 
-        // Simple dialog for creating a workout plan (can be enhanced with a proper form later)
-        TextInputDialog titleDialog = new TextInputDialog();
-        titleDialog.setTitle("Create Workout Plan");
-        titleDialog.setHeaderText("Enter workout plan details");
-        titleDialog.setContentText("Workout Plan Title:");
+        try {
+            // Load the form FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/workout-plan-form.fxml"));
+            DialogPane formPane = loader.load();
+            WorkoutPlanFormController formController = loader.getController();
 
-        Optional<String> titleResult = titleDialog.showAndWait();
-        if (titleResult.isPresent() && !titleResult.get().trim().isEmpty()) {
-            String title = titleResult.get().trim();
-            
-            // For now, we'll need a member ID - in a real app, you'd select from a list
-            // For demo purposes, we'll use a placeholder
-            TextInputDialog memberDialog = new TextInputDialog("1");
-            memberDialog.setTitle("Create Workout Plan");
-            memberDialog.setHeaderText("Enter member ID");
-            memberDialog.setContentText("Member ID:");
+            // Create dialog
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setDialogPane(formPane);
+            dialog.setTitle("Create Workout Plan");
+            dialog.setResizable(true);
 
-            Optional<String> memberIdResult = memberDialog.showAndWait();
-            if (memberIdResult.isPresent()) {
-                try {
-                    long memberId = Long.parseLong(memberIdResult.get().trim());
-                    String description = "Custom workout plan";
-                    String difficulty = "Intermediate";
+            // Set button types
+            ButtonType createButtonType = new ButtonType("Create", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
 
-                    Optional<WorkoutPlan> created = workoutService.createWorkoutPlan(
-                        memberId, currentUser.getId(), title, description, difficulty
-                    );
+            // Validate before closing
+            javafx.scene.control.Button createButton = (javafx.scene.control.Button) dialog.getDialogPane().lookupButton(createButtonType);
+            createButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+                if (!formController.validate()) {
+                    showErrorAlert("Validation Error", "Please select a member and enter a title.");
+                    event.consume();
+                }
+            });
 
-                    if (created.isPresent()) {
-                        showSuccessAlert("Success", "Workout plan created successfully!");
-                        loadWorkoutPlans(); // Refresh the table
-                    } else {
-                        showErrorAlert("Error", "Failed to create workout plan");
-                    }
-                } catch (NumberFormatException e) {
-                    showErrorAlert("Error", "Invalid member ID");
+            Optional<ButtonType> result = dialog.showAndWait();
+            if (result.isPresent() && result.get() == createButtonType) {
+                // Get form data
+                User selectedMember = formController.getSelectedMember();
+                if (selectedMember == null) {
+                    showErrorAlert("Error", "Please select a member");
+                    return;
+                }
+
+                Optional<WorkoutPlan> created = workoutService.createWorkoutPlan(
+                    selectedMember.getId(),
+                    currentUser.getId(),
+                    formController.getTitle(),
+                    formController.getDescription(),
+                    formController.getDifficulty(),
+                    formController.getMuscleGroup(),
+                    formController.getWorkoutType(),
+                    formController.getDurationMinutes(),
+                    formController.getEquipmentNeeded(),
+                    formController.getTargetSets(),
+                    formController.getTargetReps(),
+                    formController.getRestSeconds()
+                );
+
+                if (created.isPresent()) {
+                    showSuccessAlert("Success", "Workout plan created successfully!");
+                    loadWorkoutPlans(); // Refresh the table
+                } else {
+                    showErrorAlert("Error", "Failed to create workout plan");
                 }
             }
+        } catch (IOException e) {
+            showErrorAlert("Error", "Failed to load workout plan form: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

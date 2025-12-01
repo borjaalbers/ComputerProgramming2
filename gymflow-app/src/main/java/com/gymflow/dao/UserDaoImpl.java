@@ -215,6 +215,45 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
+    public java.util.List<User> findByRole(Role role) {
+        String sql = """
+            SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = ?
+            ORDER BY u.full_name ASC
+            """;
+
+        java.util.List<User> users = new java.util.ArrayList<>();
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, role.name());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long id = rs.getLong("id");
+                    String username = rs.getString("username");
+                    String fullName = rs.getString("full_name");
+                    String email = rs.getString("email");
+                    LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
+                    String roleName = rs.getString("role_name");
+
+                    Role userRole = Role.fromString(roleName);
+                    User user = UserFactory.createUser(userRole, id, username, fullName, email, createdAt);
+                    users.add(user);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding users by role: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return users;
+    }
+
+    @Override
     public int countByRole(Role role) {
         String sql = """
             SELECT COUNT(*) as count

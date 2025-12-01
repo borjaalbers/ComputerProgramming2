@@ -61,10 +61,19 @@ public class MemberDashboardController {
     private TableColumn<WorkoutPlan, String> workoutTitleColumn;
 
     @FXML
-    private TableColumn<WorkoutPlan, String> workoutDescriptionColumn;
+    private TableColumn<WorkoutPlan, String> workoutTypeColumn;
+
+    @FXML
+    private TableColumn<WorkoutPlan, String> workoutMuscleGroupColumn;
 
     @FXML
     private TableColumn<WorkoutPlan, String> workoutDifficultyColumn;
+
+    @FXML
+    private TableColumn<WorkoutPlan, String> workoutDurationColumn;
+
+    @FXML
+    private TableColumn<WorkoutPlan, String> workoutSetsRepsColumn;
 
     @FXML
     private TableColumn<WorkoutPlan, String> workoutCreatedColumn;
@@ -86,6 +95,9 @@ public class MemberDashboardController {
 
     @FXML
     private TableColumn<ClassSession, String> classRegisteredColumn;
+
+    @FXML
+    private TableColumn<ClassSession, String> classWorkoutPlanColumn;
 
     @FXML
     private javafx.scene.control.Button registerButton;
@@ -110,12 +122,27 @@ public class MemberDashboardController {
 
     @FXML
     private void initialize() {
-        loadUserInfo();
-        setupWorkoutTable();
-        setupClassTable();
-        loadWorkoutPlans();
-        loadUpcomingClasses();
-        logoutButton.setOnAction(event -> handleLogout());
+        try {
+            // Initialize collections first
+            upcomingClasses = FXCollections.observableArrayList();
+            workoutPlans = FXCollections.observableArrayList();
+            
+            loadUserInfo();
+            setupWorkoutTable();
+            setupClassTable();
+            loadUpcomingClasses(); // Load classes first
+            loadWorkoutPlans(); // Then load workout plans (which uses upcomingClasses)
+            if (logoutButton != null) {
+                logoutButton.setOnAction(event -> handleLogout());
+            }
+        } catch (Exception e) {
+            System.err.println("Error initializing MemberDashboardController: " + e.getMessage());
+            e.printStackTrace();
+            // Show error to user
+            javafx.application.Platform.runLater(() -> {
+                showErrorAlert("Initialization Error", "Failed to initialize dashboard: " + e.getMessage());
+            });
+        }
     }
 
     private void loadUserInfo() {
@@ -130,9 +157,58 @@ public class MemberDashboardController {
     }
 
     private void setupWorkoutTable() {
+        if (workoutTitleColumn == null || workoutTypeColumn == null || 
+            workoutMuscleGroupColumn == null || workoutDifficultyColumn == null ||
+            workoutDurationColumn == null || workoutSetsRepsColumn == null ||
+            workoutCreatedColumn == null) {
+            System.err.println("Warning: Some workout table columns are null");
+            return;
+        }
+        
         workoutTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        workoutDescriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
+        
+        workoutTypeColumn.setCellValueFactory(cellData -> {
+            WorkoutPlan plan = cellData.getValue();
+            if (plan != null && plan.getWorkoutType() != null) {
+                return new javafx.beans.property.SimpleStringProperty(plan.getWorkoutType());
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+        
+        workoutMuscleGroupColumn.setCellValueFactory(cellData -> {
+            WorkoutPlan plan = cellData.getValue();
+            if (plan != null && plan.getMuscleGroup() != null) {
+                return new javafx.beans.property.SimpleStringProperty(plan.getMuscleGroup());
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+        
         workoutDifficultyColumn.setCellValueFactory(new PropertyValueFactory<>("difficulty"));
+        
+        workoutDurationColumn.setCellValueFactory(cellData -> {
+            WorkoutPlan plan = cellData.getValue();
+            if (plan != null && plan.getDurationMinutes() != null) {
+                return new javafx.beans.property.SimpleStringProperty(plan.getDurationMinutes() + " min");
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+        
+        workoutSetsRepsColumn.setCellValueFactory(cellData -> {
+            WorkoutPlan plan = cellData.getValue();
+            if (plan != null) {
+                Integer sets = plan.getTargetSets();
+                Integer reps = plan.getTargetReps();
+                if (sets != null && reps != null) {
+                    return new javafx.beans.property.SimpleStringProperty(sets + " x " + reps);
+                } else if (sets != null) {
+                    return new javafx.beans.property.SimpleStringProperty(sets + " sets");
+                } else if (reps != null) {
+                    return new javafx.beans.property.SimpleStringProperty(reps + " reps");
+                }
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+        
         workoutCreatedColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null && plan.getCreatedAt() != null) {
@@ -144,6 +220,13 @@ public class MemberDashboardController {
     }
 
     private void setupClassTable() {
+        if (classTable == null || classNameColumn == null || classTrainerColumn == null ||
+            classDateTimeColumn == null || classCapacityColumn == null ||
+            classRegisteredColumn == null || classWorkoutPlanColumn == null) {
+            System.err.println("Warning: Some class table columns are null");
+            return;
+        }
+        
         // Enable row selection
         classTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.SINGLE);
         
@@ -208,6 +291,17 @@ public class MemberDashboardController {
                 return new javafx.beans.property.SimpleStringProperty("");
             }
             return new javafx.beans.property.SimpleStringProperty("");
+        });
+        
+        // Workout Plan column - shows the workout plan for the class
+        classWorkoutPlanColumn.setCellValueFactory(cellData -> {
+            ClassSession session = cellData.getValue();
+            if (session != null && session.getWorkoutPlanId() != null) {
+                // Get workout plan title
+                String workoutTitle = getWorkoutPlanTitle(session.getWorkoutPlanId());
+                return new javafx.beans.property.SimpleStringProperty(workoutTitle);
+            }
+            return new javafx.beans.property.SimpleStringProperty("No workout plan");
         });
         
         // Add visual feedback for selected row and update button states
@@ -299,13 +393,59 @@ public class MemberDashboardController {
         }
         return "Trainer";
     }
+    
+    /**
+     * Gets the workout plan title from the database.
+     */
+    private String getWorkoutPlanTitle(long workoutPlanId) {
+        try {
+            Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(workoutPlanId);
+            if (plan.isPresent()) {
+                return plan.get().getTitle();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting workout plan title: " + e.getMessage());
+        }
+        return "Unknown";
+    }
 
     private void loadWorkoutPlans() {
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser != null && currentUser instanceof Member) {
-            workoutPlans = FXCollections.observableArrayList(
-                workoutService.getWorkoutPlansForMember(currentUser.getId())
-            );
+            // Get direct workout plans assigned to member
+            List<WorkoutPlan> directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+            
+            // Get workout plans from registered classes
+            List<WorkoutPlan> classPlans = new java.util.ArrayList<>();
+            if (upcomingClasses != null) {
+                for (ClassSession session : upcomingClasses) {
+                    if (session != null && session.getWorkoutPlanId() != null && 
+                        attendanceService.isRegisteredForClass(session.getId(), currentUser.getId())) {
+                        Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
+                        plan.ifPresent(classPlans::add);
+                    }
+                }
+            }
+            
+            // Combine both lists (avoid duplicates)
+            java.util.Set<Long> planIds = new java.util.HashSet<>();
+            List<WorkoutPlan> allPlans = new java.util.ArrayList<>();
+            
+            for (WorkoutPlan plan : directPlans) {
+                if (!planIds.contains(plan.getId())) {
+                    allPlans.add(plan);
+                    planIds.add(plan.getId());
+                }
+            }
+            
+            for (WorkoutPlan plan : classPlans) {
+                if (!planIds.contains(plan.getId())) {
+                    allPlans.add(plan);
+                    planIds.add(plan.getId());
+                }
+            }
+            
+            workoutPlans = FXCollections.observableArrayList(allPlans);
             workoutTable.setItems(workoutPlans);
         } else {
             workoutPlans = FXCollections.observableArrayList();
@@ -314,12 +454,19 @@ public class MemberDashboardController {
     }
 
     private void loadUpcomingClasses() {
-        List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
-        upcomingClasses = FXCollections.observableArrayList(sessions);
-        classTable.setItems(upcomingClasses);
+        if (upcomingClasses == null) {
+            upcomingClasses = FXCollections.observableArrayList();
+        }
         
-        // Refresh the table to update cell values (especially Registered column)
-        classTable.refresh();
+        List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
+        upcomingClasses.clear();
+        upcomingClasses.addAll(sessions);
+        
+        if (classTable != null) {
+            classTable.setItems(upcomingClasses);
+            // Refresh the table to update cell values (especially Registered column)
+            classTable.refresh();
+        }
     }
 
     @FXML
@@ -358,6 +505,8 @@ public class MemberDashboardController {
             showSuccessAlert("Success", "Successfully registered for '" + selectedSession.getTitle() + "'");
             // Refresh the table to update the Registered column
             refreshClassTable();
+            // Also refresh workout plans in case this class has a workout plan
+            loadWorkoutPlans();
         } else {
             showErrorAlert("Error", "Failed to register for class. Please try again.");
         }
@@ -431,6 +580,8 @@ public class MemberDashboardController {
             if (success) {
                 showSuccessAlert("Success", "Successfully unregistered from '" + selectedSession.getTitle() + "'");
                 refreshClassTable(); // Refresh the table
+                // Also refresh workout plans
+                loadWorkoutPlans();
             } else {
                 showErrorAlert("Error", "Failed to unregister from class");
             }

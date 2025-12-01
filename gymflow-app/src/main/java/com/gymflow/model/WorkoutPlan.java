@@ -17,6 +17,13 @@ public class WorkoutPlan {
     private String title;
     private String description;
     private String difficulty;
+    private String muscleGroup;
+    private String workoutType;
+    private Integer durationMinutes;
+    private String equipmentNeeded;
+    private Integer targetSets;
+    private Integer targetReps;
+    private Integer restSeconds;
     private final LocalDateTime createdAt;
 
     /**
@@ -32,12 +39,30 @@ public class WorkoutPlan {
      */
     public WorkoutPlan(long id, long memberId, long trainerId, String title, 
                       String description, String difficulty, LocalDateTime createdAt) {
+        this(id, memberId, trainerId, title, description, difficulty, null, null, null, null, null, null, null, createdAt);
+    }
+
+    /**
+     * Creates a new WorkoutPlan with all fields.
+     */
+    public WorkoutPlan(long id, long memberId, long trainerId, String title, 
+                      String description, String difficulty, String muscleGroup,
+                      String workoutType, Integer durationMinutes, String equipmentNeeded,
+                      Integer targetSets, Integer targetReps, Integer restSeconds,
+                      LocalDateTime createdAt) {
         this.id = id;
         this.memberId = memberId;
         this.trainerId = trainerId;
         this.title = title;
         this.description = description;
         this.difficulty = difficulty;
+        this.muscleGroup = muscleGroup;
+        this.workoutType = workoutType;
+        this.durationMinutes = durationMinutes;
+        this.equipmentNeeded = equipmentNeeded;
+        this.targetSets = targetSets;
+        this.targetReps = targetReps;
+        this.restSeconds = restSeconds;
         this.createdAt = createdAt;
     }
 
@@ -79,6 +104,62 @@ public class WorkoutPlan {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getMuscleGroup() {
+        return muscleGroup;
+    }
+
+    public void setMuscleGroup(String muscleGroup) {
+        this.muscleGroup = muscleGroup;
+    }
+
+    public String getWorkoutType() {
+        return workoutType;
+    }
+
+    public void setWorkoutType(String workoutType) {
+        this.workoutType = workoutType;
+    }
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+    }
+
+    public String getEquipmentNeeded() {
+        return equipmentNeeded;
+    }
+
+    public void setEquipmentNeeded(String equipmentNeeded) {
+        this.equipmentNeeded = equipmentNeeded;
+    }
+
+    public Integer getTargetSets() {
+        return targetSets;
+    }
+
+    public void setTargetSets(Integer targetSets) {
+        this.targetSets = targetSets;
+    }
+
+    public Integer getTargetReps() {
+        return targetReps;
+    }
+
+    public void setTargetReps(Integer targetReps) {
+        this.targetReps = targetReps;
+    }
+
+    public Integer getRestSeconds() {
+        return restSeconds;
+    }
+
+    public void setRestSeconds(Integer restSeconds) {
+        this.restSeconds = restSeconds;
     }
 
     @Override

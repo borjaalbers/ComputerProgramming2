@@ -140,5 +140,34 @@ public class ClassScheduleServiceImpl implements ClassScheduleService {
 
         return success;
     }
+
+    @Override
+    public boolean assignWorkoutPlanToClass(long sessionId, Long workoutPlanId) {
+        if (sessionId <= 0) {
+            System.err.println("Invalid session ID");
+            return false;
+        }
+
+        Optional<ClassSession> existingOpt = classSessionDao.findById(sessionId);
+        
+        if (existingOpt.isEmpty()) {
+            System.err.println("Class session not found: " + sessionId);
+            return false;
+        }
+
+        ClassSession existing = existingOpt.get();
+        existing.setWorkoutPlanId(workoutPlanId);
+
+        boolean success = classSessionDao.update(existing);
+        
+        if (success) {
+            System.out.println("Workout plan " + (workoutPlanId != null ? workoutPlanId : "removed") + 
+                             " assigned to class session " + sessionId);
+        } else {
+            System.err.println("Failed to assign workout plan to class session: " + sessionId);
+        }
+
+        return success;
+    }
 }
 

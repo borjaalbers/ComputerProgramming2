@@ -21,6 +21,28 @@ public interface WorkoutService {
      */
     Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title, 
                                             String description, String difficulty);
+    
+    /**
+     * Creates a new workout plan with all fields.
+     *
+     * @param memberId the member ID
+     * @param trainerId the trainer ID creating the plan
+     * @param title the workout plan title
+     * @param description the workout plan description
+     * @param difficulty the difficulty level
+     * @param muscleGroup the target muscle group
+     * @param workoutType the type of workout
+     * @param durationMinutes the duration in minutes
+     * @param equipmentNeeded the equipment needed
+     * @param targetSets the target number of sets
+     * @param targetReps the target number of reps
+     * @param restSeconds the rest time in seconds
+     * @return Optional containing the created WorkoutPlan if successful, empty otherwise
+     */
+    Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title,
+                                            String description, String difficulty, String muscleGroup,
+                                            String workoutType, Integer durationMinutes, String equipmentNeeded,
+                                            Integer targetSets, Integer targetReps, Integer restSeconds);
 
     /**
      * Gets all workout plans for a specific member.

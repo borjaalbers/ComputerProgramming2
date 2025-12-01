@@ -32,6 +32,11 @@ public class DatabaseInitializer {
             createTables(stmt);
             System.out.println("Database tables created successfully.");
 
+            // Migrate schema (add new columns to existing tables)
+            System.out.println("Migrating database schema...");
+            migrateSchema(stmt);
+            System.out.println("Schema migration completed.");
+
             // Insert seed data
             System.out.println("Inserting seed data...");
             insertSeedData(stmt);
@@ -75,6 +80,13 @@ public class DatabaseInitializer {
                 title VARCHAR(150) NOT NULL,
                 description TEXT,
                 difficulty VARCHAR(50),
+                muscle_group VARCHAR(100),
+                workout_type VARCHAR(50),
+                duration_minutes INT,
+                equipment_needed TEXT,
+                target_sets INT,
+                target_reps INT,
+                rest_seconds INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (member_id) REFERENCES users(id),
                 FOREIGN KEY (trainer_id) REFERENCES users(id)
@@ -89,7 +101,9 @@ public class DatabaseInitializer {
                 title VARCHAR(150) NOT NULL,
                 schedule_timestamp TIMESTAMP NOT NULL,
                 capacity INT DEFAULT 10,
-                FOREIGN KEY (trainer_id) REFERENCES users(id)
+                workout_plan_id INT,
+                FOREIGN KEY (trainer_id) REFERENCES users(id),
+                FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id)
             )
             """);
 
@@ -114,6 +128,114 @@ public class DatabaseInitializer {
                 last_service DATE
             )
             """);
+    }
+
+    /**
+     * Migrates the database schema to add new columns if they don't exist.
+     * Uses H2-compatible syntax by checking if column exists first.
+     */
+    private void migrateSchema(Statement stmt) throws SQLException {
+        // Check if workout_plans table exists first
+        try {
+            stmt.executeQuery("SELECT id FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            // Table doesn't exist yet, skip migration (will be created with new schema)
+            System.out.println("workout_plans table doesn't exist yet, skipping migration");
+            return;
+        }
+        
+        // Check if workout_plans table exists and add new columns
+        try {
+            // Try to query a new column - if it fails, the column doesn't exist
+            stmt.executeQuery("SELECT muscle_group FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            // Column doesn't exist, add it
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN muscle_group VARCHAR(100)");
+                System.out.println("Added muscle_group column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add muscle_group column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT workout_type FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN workout_type VARCHAR(50)");
+                System.out.println("Added workout_type column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add workout_type column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT duration_minutes FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN duration_minutes INT");
+                System.out.println("Added duration_minutes column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add duration_minutes column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT equipment_needed FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN equipment_needed TEXT");
+                System.out.println("Added equipment_needed column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add equipment_needed column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT target_sets FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN target_sets INT");
+                System.out.println("Added target_sets column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add target_sets column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT target_reps FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN target_reps INT");
+                System.out.println("Added target_reps column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add target_reps column: " + ex.getMessage());
+            }
+        }
+        
+        try {
+            stmt.executeQuery("SELECT rest_seconds FROM workout_plans LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE workout_plans ADD COLUMN rest_seconds INT");
+                System.out.println("Added rest_seconds column to workout_plans");
+            } catch (SQLException ex) {
+                System.out.println("Could not add rest_seconds column: " + ex.getMessage());
+            }
+        }
+        
+        // Add workout_plan_id to class_sessions if it doesn't exist
+        try {
+            stmt.executeQuery("SELECT workout_plan_id FROM class_sessions LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("ALTER TABLE class_sessions ADD COLUMN workout_plan_id INT");
+                stmt.execute("ALTER TABLE class_sessions ADD FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id)");
+                System.out.println("Added workout_plan_id column to class_sessions");
+            } catch (SQLException ex) {
+                System.out.println("Could not add workout_plan_id column: " + ex.getMessage());
+            }
+        }
     }
 
     /**

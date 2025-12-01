@@ -26,7 +26,7 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
     @Override
     public Optional<ClassSession> findById(long id) {
         String sql = """
-            SELECT id, trainer_id, title, schedule_timestamp, capacity
+            SELECT id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id
             FROM class_sessions
             WHERE id = ?
             """;
@@ -52,7 +52,7 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
     @Override
     public List<ClassSession> findByTrainerId(long trainerId) {
         String sql = """
-            SELECT id, trainer_id, title, schedule_timestamp, capacity
+            SELECT id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id
             FROM class_sessions
             WHERE trainer_id = ?
             ORDER BY schedule_timestamp ASC
@@ -81,7 +81,7 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
     @Override
     public List<ClassSession> findUpcoming() {
         String sql = """
-            SELECT id, trainer_id, title, schedule_timestamp, capacity
+            SELECT id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id
             FROM class_sessions
             WHERE schedule_timestamp > CURRENT_TIMESTAMP
             ORDER BY schedule_timestamp ASC
@@ -108,8 +108,8 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
     @Override
     public Optional<ClassSession> create(ClassSession classSession) {
         String sql = """
-            INSERT INTO class_sessions (trainer_id, title, schedule_timestamp, capacity)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO class_sessions (trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+            VALUES (?, ?, ?, ?, ?)
             """;
 
         try (Connection conn = dbConnection.getConnection();
@@ -119,6 +119,11 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
             stmt.setString(2, classSession.getTitle());
             stmt.setTimestamp(3, Timestamp.valueOf(classSession.getScheduleTimestamp()));
             stmt.setInt(4, classSession.getCapacity());
+            if (classSession.getWorkoutPlanId() != null) {
+                stmt.setLong(5, classSession.getWorkoutPlanId());
+            } else {
+                stmt.setNull(5, java.sql.Types.INTEGER);
+            }
 
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected == 0) {
@@ -135,7 +140,8 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
                         classSession.getTrainerId(),
                         classSession.getTitle(),
                         classSession.getScheduleTimestamp(),
-                        classSession.getCapacity()
+                        classSession.getCapacity(),
+                        classSession.getWorkoutPlanId()
                     );
                     return Optional.of(created);
                 }
@@ -152,7 +158,7 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
     public boolean update(ClassSession classSession) {
         String sql = """
             UPDATE class_sessions
-            SET title = ?, schedule_timestamp = ?, capacity = ?
+            SET title = ?, schedule_timestamp = ?, capacity = ?, workout_plan_id = ?
             WHERE id = ?
             """;
 
@@ -162,7 +168,12 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
             stmt.setString(1, classSession.getTitle());
             stmt.setTimestamp(2, Timestamp.valueOf(classSession.getScheduleTimestamp()));
             stmt.setInt(3, classSession.getCapacity());
-            stmt.setLong(4, classSession.getId());
+            if (classSession.getWorkoutPlanId() != null) {
+                stmt.setLong(4, classSession.getWorkoutPlanId());
+            } else {
+                stmt.setNull(4, java.sql.Types.INTEGER);
+            }
+            stmt.setLong(5, classSession.getId());
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -198,8 +209,9 @@ public class ClassSessionDaoImpl implements ClassSessionDao {
         Timestamp scheduleTimestamp = rs.getTimestamp("schedule_timestamp");
         LocalDateTime schedule = scheduleTimestamp != null ? scheduleTimestamp.toLocalDateTime() : null;
         int capacity = rs.getInt("capacity");
+        Long workoutPlanId = rs.getObject("workout_plan_id", Long.class);
 
-        return new ClassSession(id, trainerId, title, schedule, capacity);
+        return new ClassSession(id, trainerId, title, schedule, capacity, workoutPlanId);
     }
 }
 

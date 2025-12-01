@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS workout_plans (
     title VARCHAR(150) NOT NULL,
     description TEXT,
     difficulty VARCHAR(50),
+    muscle_group VARCHAR(100),
+    workout_type VARCHAR(50),
+    duration_minutes INTEGER,
+    equipment_needed TEXT,
+    target_sets INTEGER,
+    target_reps INTEGER,
+    rest_seconds INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,7 +38,8 @@ CREATE TABLE IF NOT EXISTS class_sessions (
     trainer_id INTEGER REFERENCES users(id),
     title VARCHAR(150) NOT NULL,
     schedule_timestamp TIMESTAMP NOT NULL,
-    capacity INTEGER DEFAULT 10
+    capacity INTEGER DEFAULT 10,
+    workout_plan_id INTEGER REFERENCES workout_plans(id)
 );
 
 CREATE TABLE IF NOT EXISTS attendance_records (
