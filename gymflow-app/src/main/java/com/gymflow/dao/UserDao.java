@@ -25,6 +25,14 @@ public interface UserDao {
     Optional<User> create(String username, String passwordHash, String fullName, String email, Role role);
     
     /**
+     * Finds a user by ID.
+     *
+     * @param id the user ID
+     * @return Optional containing the User if found, empty otherwise
+     */
+    Optional<User> findById(long id);
+    
+    /**
      * Counts users by role.
      *
      * @param role the role to count

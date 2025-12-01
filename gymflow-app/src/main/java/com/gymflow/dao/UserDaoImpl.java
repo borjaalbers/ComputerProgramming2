@@ -66,6 +66,49 @@ public class UserDaoImpl implements UserDao {
     }
 
     /**
+     * Finds a user by ID. Joins with roles table to get role information.
+     *
+     * @param id the user ID to search for
+     * @return Optional containing the User if found, empty otherwise
+     */
+    @Override
+    public Optional<User> findById(long id) {
+        String sql = """
+            SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.id = ?
+            """;
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    long userId = rs.getLong("id");
+                    String username = rs.getString("username");
+                    String fullName = rs.getString("full_name");
+                    String email = rs.getString("email");
+                    LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
+                    String roleName = rs.getString("role_name");
+
+                    Role role = Role.fromString(roleName);
+                    User user = UserFactory.createUser(role, userId, username, fullName, email, createdAt);
+
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding user by ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    /**
      * Creates a new user in the database.
      *
      * @param username the username (must be unique)

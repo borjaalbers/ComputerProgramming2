@@ -27,6 +27,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -86,6 +87,12 @@ public class MemberDashboardController {
     @FXML
     private TableColumn<ClassSession, String> classRegisteredColumn;
 
+    @FXML
+    private javafx.scene.control.Button registerButton;
+
+    @FXML
+    private javafx.scene.control.Button unregisterButton;
+
     private final SessionManager sessionManager;
     private final WorkoutService workoutService;
     private final ClassScheduleService classScheduleService;
@@ -137,11 +144,21 @@ public class MemberDashboardController {
     }
 
     private void setupClassTable() {
+        // Enable row selection
+        classTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.SINGLE);
+        
         classNameColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        
+        // Get trainer name from database
         classTrainerColumn.setCellValueFactory(cellData -> {
-            // TODO: Get trainer name from database
-            return new javafx.beans.property.SimpleStringProperty("Trainer");
+            ClassSession session = cellData.getValue();
+            if (session != null) {
+                String trainerName = getTrainerName(session.getTrainerId());
+                return new javafx.beans.property.SimpleStringProperty(trainerName);
+            }
+            return new javafx.beans.property.SimpleStringProperty("Unknown");
         });
+        
         classDateTimeColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
             if (session != null && session.getScheduleTimestamp() != null) {
@@ -150,16 +167,137 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
+        
         classCapacityColumn.setCellValueFactory(new PropertyValueFactory<>("capacity"));
+        
+        // Registered column - use custom cell factory that always checks current state
+        classRegisteredColumn.setCellFactory(column -> new javafx.scene.control.TableCell<ClassSession, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setText(null);
+                } else {
+                    ClassSession session = getTableRow().getItem();
+                    User currentUser = sessionManager.getCurrentUser();
+                    if (session != null && currentUser != null && currentUser instanceof Member) {
+                        // Always check current registration status from database
+                        boolean isRegistered = attendanceService.isRegisteredForClass(
+                            session.getId(), currentUser.getId()
+                        );
+                        setText(isRegistered ? "Yes" : "No");
+                        // Visual feedback - green for registered, gray for not registered
+                        if (isRegistered) {
+                            setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                        } else {
+                            setStyle("-fx-text-fill: #7f8c8d;");
+                        }
+                    } else {
+                        setText("No");
+                        setStyle("-fx-text-fill: #7f8c8d;");
+                    }
+                }
+            }
+        });
+        
+        // Set a dummy cell value factory (required by JavaFX, but we use custom cell factory above)
         classRegisteredColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
-            User currentUser = sessionManager.getCurrentUser();
-            if (session != null && currentUser != null && currentUser instanceof Member) {
-                boolean isRegistered = attendanceService.isRegisteredForClass(session.getId(), currentUser.getId());
-                return new javafx.beans.property.SimpleStringProperty(isRegistered ? "Yes" : "No");
+            if (session != null) {
+                // Return a property that will trigger cell updates
+                return new javafx.beans.property.SimpleStringProperty("");
             }
-            return new javafx.beans.property.SimpleStringProperty("No");
+            return new javafx.beans.property.SimpleStringProperty("");
         });
+        
+        // Add visual feedback for selected row and update button states
+        classTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            updateButtonStates(newSelection);
+        });
+        
+        // Add double-click to register and visual feedback for selection
+        classTable.setRowFactory(tv -> {
+            javafx.scene.control.TableRow<ClassSession> row = new javafx.scene.control.TableRow<ClassSession>() {
+                @Override
+                protected void updateItem(ClassSession item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setStyle("");
+                    } else {
+                        // Highlight selected row
+                        if (isSelected()) {
+                            setStyle("-fx-background-color: #e3f2fd;");
+                        } else {
+                            setStyle("");
+                        }
+                    }
+                }
+            };
+            
+            row.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {
+                if (isNowSelected) {
+                    row.setStyle("-fx-background-color: #e3f2fd;");
+                } else {
+                    row.setStyle("");
+                }
+            });
+            
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    // Double-click to register
+                    handleRegisterForClass();
+                }
+            });
+            return row;
+        });
+        
+        // Initialize button states
+        updateButtonStates(null);
+    }
+    
+    /**
+     * Updates the enabled state of register/unregister buttons based on selection.
+     */
+    private void updateButtonStates(ClassSession selectedSession) {
+        if (selectedSession == null) {
+            if (registerButton != null) registerButton.setDisable(true);
+            if (unregisterButton != null) unregisterButton.setDisable(true);
+            return;
+        }
+        
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || !(currentUser instanceof Member)) {
+            if (registerButton != null) registerButton.setDisable(true);
+            if (unregisterButton != null) unregisterButton.setDisable(true);
+            return;
+        }
+        
+        boolean isRegistered = attendanceService.isRegisteredForClass(
+            selectedSession.getId(), currentUser.getId()
+        );
+        
+        if (registerButton != null) {
+            registerButton.setDisable(isRegistered);
+        }
+        if (unregisterButton != null) {
+            unregisterButton.setDisable(!isRegistered);
+        }
+    }
+    
+    /**
+     * Gets the trainer's name from the database.
+     */
+    private String getTrainerName(long trainerId) {
+        try {
+            com.gymflow.dao.UserDao userDao = new com.gymflow.dao.UserDaoImpl();
+            Optional<User> trainer = userDao.findById(trainerId);
+            if (trainer.isPresent()) {
+                return trainer.get().getFullName();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting trainer name: " + e.getMessage());
+        }
+        return "Trainer";
     }
 
     private void loadWorkoutPlans() {
@@ -176,17 +314,19 @@ public class MemberDashboardController {
     }
 
     private void loadUpcomingClasses() {
-        upcomingClasses = FXCollections.observableArrayList(
-            classScheduleService.getUpcomingClassSessions()
-        );
+        List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
+        upcomingClasses = FXCollections.observableArrayList(sessions);
         classTable.setItems(upcomingClasses);
+        
+        // Refresh the table to update cell values (especially Registered column)
+        classTable.refresh();
     }
 
     @FXML
     private void handleRegisterForClass() {
         ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
         if (selectedSession == null) {
-            showErrorAlert("No Selection", "Please select a class to register for");
+            showErrorAlert("No Selection", "Please select a class from the table to register for.");
             return;
         }
 
@@ -205,7 +345,7 @@ public class MemberDashboardController {
         // Check capacity
         int registered = attendanceService.getRegisteredCount(selectedSession.getId());
         if (registered >= selectedSession.getCapacity()) {
-            showErrorAlert("Class Full", "This class has reached its capacity");
+            showErrorAlert("Class Full", "This class has reached its capacity (" + selectedSession.getCapacity() + " members)");
             return;
         }
 
@@ -216,9 +356,43 @@ public class MemberDashboardController {
 
         if (result.isPresent()) {
             showSuccessAlert("Success", "Successfully registered for '" + selectedSession.getTitle() + "'");
-            loadUpcomingClasses(); // Refresh the table
+            // Refresh the table to update the Registered column
+            refreshClassTable();
         } else {
-            showErrorAlert("Error", "Failed to register for class");
+            showErrorAlert("Error", "Failed to register for class. Please try again.");
+        }
+    }
+    
+    /**
+     * Refreshes the class table to update registration status.
+     */
+    private void refreshClassTable() {
+        // Get the currently selected session ID to restore selection after refresh
+        ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
+        long selectedId = selectedSession != null ? selectedSession.getId() : -1;
+        
+        // Reload data from database
+        List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
+        
+        // Clear and reload - this ensures all cell value factories are re-evaluated
+        upcomingClasses.clear();
+        upcomingClasses.addAll(sessions);
+        
+        // Force table refresh - this causes all cell value factories to be re-evaluated
+        // The Registered column will check the database again for each row
+        classTable.refresh();
+        
+        // Restore selection by finding the session with the same ID
+        if (selectedId > 0) {
+            for (int i = 0; i < upcomingClasses.size(); i++) {
+                if (upcomingClasses.get(i).getId() == selectedId) {
+                    classTable.getSelectionModel().select(i);
+                    updateButtonStates(upcomingClasses.get(i));
+                    break;
+                }
+            }
+        } else {
+            updateButtonStates(null);
         }
     }
 
@@ -256,7 +430,7 @@ public class MemberDashboardController {
 
             if (success) {
                 showSuccessAlert("Success", "Successfully unregistered from '" + selectedSession.getTitle() + "'");
-                loadUpcomingClasses(); // Refresh the table
+                refreshClassTable(); // Refresh the table
             } else {
                 showErrorAlert("Error", "Failed to unregister from class");
             }
