@@ -69,6 +69,8 @@ public class DatabaseConnection {
     public Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(url, username, password);
+            // Ensure auto-commit is enabled for immediate persistence
+            connection.setAutoCommit(true);
         }
         return connection;
     }

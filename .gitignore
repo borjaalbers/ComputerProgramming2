@@ -25,5 +25,11 @@ logs/
 # Database creds
 *.env
 
+# H2 Database files (persistent data)
+data/
+*.mv.db
+*.trace.db
+*.lock.db
+
 # Java compiled
 *.class

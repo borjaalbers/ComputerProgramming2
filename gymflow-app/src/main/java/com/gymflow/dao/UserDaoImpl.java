@@ -110,35 +110,62 @@ public class UserDaoImpl implements UserDao {
             VALUES (?, ?, ?, ?, ?)
             """;
 
-        try (Connection conn = dbConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+        Connection conn = null;
+        try {
+            conn = dbConnection.getConnection();
+            // Ensure auto-commit is enabled for immediate persistence
+            conn.setAutoCommit(true);
+            
+            try (PreparedStatement stmt = conn.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                stmt.setInt(1, roleId);
+                stmt.setString(2, username);
+                stmt.setString(3, passwordHash);
+                stmt.setString(4, fullName);
+                stmt.setString(5, email);
 
-            stmt.setInt(1, roleId);
-            stmt.setString(2, username);
-            stmt.setString(3, passwordHash);
-            stmt.setString(4, fullName);
-            stmt.setString(5, email);
+                System.out.println("Attempting to create user: " + username);
+                System.out.println("Password hash length: " + passwordHash.length());
+                
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected == 0) {
+                    System.err.println("No rows affected when creating user: " + username);
+                    return Optional.empty();
+                }
 
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                return Optional.empty();
-            }
+                System.out.println("User inserted successfully, rows affected: " + rowsAffected);
 
-            // Get the generated ID
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    long id = generatedKeys.getLong(1);
-                    LocalDateTime createdAt = LocalDateTime.now();
+                // Get the generated ID
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        long id = generatedKeys.getLong(1);
+                        LocalDateTime createdAt = LocalDateTime.now();
 
-                    // Create and return the User object
-                    User user = UserFactory.createUser(role, id, username, fullName, email, createdAt);
-                    System.out.println("User created successfully: " + username);
-                    return Optional.of(user);
+                        // Verify the user was actually saved by querying it back
+                        Optional<User> verifyUser = findByUsername(username);
+                        if (verifyUser.isPresent()) {
+                            System.out.println("User created and verified successfully: " + username + " (ID: " + id + ")");
+                            User user = UserFactory.createUser(role, id, username, fullName, email, createdAt);
+                            return Optional.of(user);
+                        } else {
+                            System.err.println("User created but could not be verified: " + username);
+                            return Optional.empty();
+                        }
+                    } else {
+                        System.err.println("No generated key returned for user: " + username);
+                        return Optional.empty();
+                    }
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
             e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.err.println("Error rolling back: " + rollbackEx.getMessage());
+                }
+            }
         }
 
         return Optional.empty();

@@ -35,29 +35,38 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Optional<User> authenticate(String username, String password) {
         try {
+            System.out.println("Attempting authentication for user: " + username);
+            
             // First, find the user by username
             Optional<User> userOpt = userDao.findByUsername(username);
             
             if (userOpt.isEmpty()) {
-                System.out.println("Authentication failed: User '" + username + "' not found");
+                System.out.println("Authentication failed: User '" + username + "' not found in database");
                 return Optional.empty();
             }
 
+            System.out.println("User found: " + username);
+
             // Get the stored password hash from database
             String storedPasswordHash = getPasswordHash(username);
-            if (storedPasswordHash == null) {
+            if (storedPasswordHash == null || storedPasswordHash.isEmpty()) {
                 System.out.println("Authentication failed: Could not retrieve password hash for '" + username + "'");
                 return Optional.empty();
             }
 
+            System.out.println("Stored password hash length: " + storedPasswordHash.length());
+
             // Hash the provided password and compare
             String providedPasswordHash = PasswordHasher.sha256(password);
+            System.out.println("Provided password hash length: " + providedPasswordHash.length());
             
             if (storedPasswordHash.equals(providedPasswordHash)) {
                 System.out.println("Authentication successful for user: " + username);
                 return userOpt;
             } else {
-                System.out.println("Authentication failed: Invalid password for user '" + username + "'");
+                System.out.println("Authentication failed: Password hash mismatch for user '" + username + "'");
+                System.out.println("Stored hash (first 20 chars): " + storedPasswordHash.substring(0, Math.min(20, storedPasswordHash.length())));
+                System.out.println("Provided hash (first 20 chars): " + providedPasswordHash.substring(0, Math.min(20, providedPasswordHash.length())));
             }
 
             return Optional.empty();
