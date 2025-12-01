@@ -48,15 +48,14 @@
                             <HBox alignment="CENTER_LEFT" spacing="10.0">
                                 <Label text="Gym Equipment" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button text="Add Equipment" />
+                                <Button text="Add Equipment" onAction="#handleAddEquipment" />
                                 <Button text="Service Equipment" />
                             </HBox>
                             <TableView fx:id="equipmentTable" prefHeight="400.0">
                                 <columns>
-                                    <TableColumn text="Equipment Name" prefWidth="200.0" />
-                                    <TableColumn text="Status" prefWidth="150.0" />
-                                    <TableColumn text="Last Service" prefWidth="150.0" />
-                                    <TableColumn text="Actions" prefWidth="200.0" />
+                                    <TableColumn fx:id="equipmentNameColumn" text="Equipment Name" prefWidth="200.0" />
+                                    <TableColumn fx:id="equipmentStatusColumn" text="Status" prefWidth="150.0" />
+                                    <TableColumn fx:id="equipmentLastServiceColumn" text="Last Service" prefWidth="150.0" />
                                 </columns>
                             </TableView>
                         </children>

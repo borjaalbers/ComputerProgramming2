@@ -143,5 +143,32 @@ public class UserDaoImpl implements UserDao {
 
         return Optional.empty();
     }
+
+    @Override
+    public int countByRole(Role role) {
+        String sql = """
+            SELECT COUNT(*) as count
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = ?
+            """;
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, role.name());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("count");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error counting users by role: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
 }
 

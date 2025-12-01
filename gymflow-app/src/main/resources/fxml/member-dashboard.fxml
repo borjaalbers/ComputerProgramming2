@@ -24,10 +24,10 @@
                             <Label text="My Workout Plans" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
                             <TableView fx:id="workoutTable" prefHeight="400.0">
                                 <columns>
-                                    <TableColumn text="Title" prefWidth="200.0" />
-                                    <TableColumn text="Description" prefWidth="300.0" />
-                                    <TableColumn text="Difficulty" prefWidth="100.0" />
-                                    <TableColumn text="Created" prefWidth="150.0" />
+                                    <TableColumn fx:id="workoutTitleColumn" text="Title" prefWidth="200.0" />
+                                    <TableColumn fx:id="workoutDescriptionColumn" text="Description" prefWidth="300.0" />
+                                    <TableColumn fx:id="workoutDifficultyColumn" text="Difficulty" prefWidth="100.0" />
+                                    <TableColumn fx:id="workoutCreatedColumn" text="Created" prefWidth="150.0" />
                                 </columns>
                             </TableView>
                             <HBox spacing="10.0">
@@ -44,10 +44,10 @@
                             <Label text="Upcoming Classes" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
                             <TableView fx:id="classTable" prefHeight="400.0">
                                 <columns>
-                                    <TableColumn text="Class Name" prefWidth="200.0" />
-                                    <TableColumn text="Trainer" prefWidth="150.0" />
-                                    <TableColumn text="Date &amp; Time" prefWidth="200.0" />
-                                    <TableColumn text="Capacity" prefWidth="100.0" />
+                                    <TableColumn fx:id="classNameColumn" text="Class Name" prefWidth="200.0" />
+                                    <TableColumn fx:id="classTrainerColumn" text="Trainer" prefWidth="150.0" />
+                                    <TableColumn fx:id="classDateTimeColumn" text="Date &amp; Time" prefWidth="200.0" />
+                                    <TableColumn fx:id="classCapacityColumn" text="Capacity" prefWidth="100.0" />
                                 </columns>
                             </TableView>
                             <HBox spacing="10.0">

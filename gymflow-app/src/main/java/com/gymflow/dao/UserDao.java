@@ -3,6 +3,7 @@ package com.gymflow.dao;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,4 +23,12 @@ public interface UserDao {
      * @return Optional containing the created User if successful, empty if username already exists
      */
     Optional<User> create(String username, String passwordHash, String fullName, String email, Role role);
+    
+    /**
+     * Counts users by role.
+     *
+     * @param role the role to count
+     * @return the number of users with the specified role
+     */
+    int countByRole(Role role);
 }
