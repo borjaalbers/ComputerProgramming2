@@ -48,11 +48,12 @@
                                     <TableColumn fx:id="classTrainerColumn" text="Trainer" prefWidth="150.0" />
                                     <TableColumn fx:id="classDateTimeColumn" text="Date &amp; Time" prefWidth="200.0" />
                                     <TableColumn fx:id="classCapacityColumn" text="Capacity" prefWidth="100.0" />
+                                    <TableColumn fx:id="classRegisteredColumn" text="Registered" prefWidth="100.0" />
                                 </columns>
                             </TableView>
                             <HBox spacing="10.0">
-                                <Button text="Register for Class" />
-                                <Button text="View My Registrations" />
+                                <Button text="Register for Class" onAction="#handleRegisterForClass" />
+                                <Button text="Unregister from Class" onAction="#handleUnregisterFromClass" />
                             </HBox>
                         </children>
                     </VBox>

@@ -80,5 +80,65 @@ public class AttendanceServiceImpl implements AttendanceService {
     public List<AttendanceRecord> getAllAttendanceRecords() {
         return attendanceDao.findAll();
     }
+
+    @Override
+    public Optional<AttendanceRecord> registerForClass(long sessionId, long memberId) {
+        // Validation
+        if (sessionId <= 0 || memberId <= 0) {
+            System.err.println("Invalid session or member ID");
+            return Optional.empty();
+        }
+
+        // Check if already registered
+        if (isRegisteredForClass(sessionId, memberId)) {
+            System.err.println("Member " + memberId + " is already registered for session " + sessionId);
+            return Optional.empty();
+        }
+
+        // Register (create attendance record with attended=false)
+        Optional<AttendanceRecord> result = markAttendance(sessionId, memberId, false);
+        
+        if (result.isPresent()) {
+            System.out.println("Member " + memberId + " registered for session " + sessionId);
+        } else {
+            System.err.println("Failed to register member " + memberId + " for session " + sessionId);
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean unregisterFromClass(long sessionId, long memberId) {
+        // Validation
+        if (sessionId <= 0 || memberId <= 0) {
+            System.err.println("Invalid session or member ID");
+            return false;
+        }
+
+        boolean success = attendanceDao.delete(sessionId, memberId);
+        
+        if (success) {
+            System.out.println("Member " + memberId + " unregistered from session " + sessionId);
+        } else {
+            System.err.println("Failed to unregister member " + memberId + " from session " + sessionId);
+        }
+
+        return success;
+    }
+
+    @Override
+    public boolean isRegisteredForClass(long sessionId, long memberId) {
+        if (sessionId <= 0 || memberId <= 0) {
+            return false;
+        }
+
+        return attendanceDao.findBySessionAndMember(sessionId, memberId).isPresent();
+    }
+
+    @Override
+    public int getRegisteredCount(long sessionId) {
+        List<AttendanceRecord> records = getAttendanceForSession(sessionId);
+        return records.size(); // All records count as registrations
+    }
 }
 

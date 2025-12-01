@@ -255,6 +255,55 @@ public class AttendanceDaoImpl implements AttendanceDao {
         }
     }
 
+    @Override
+    public boolean delete(long sessionId, long memberId) {
+        String sql = """
+            DELETE FROM attendance_records
+            WHERE session_id = ? AND member_id = ?
+            """;
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, sessionId);
+            stmt.setLong(2, memberId);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting attendance record: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public Optional<AttendanceRecord> findBySessionAndMember(long sessionId, long memberId) {
+        String sql = """
+            SELECT id, session_id, member_id, attended
+            FROM attendance_records
+            WHERE session_id = ? AND member_id = ?
+            """;
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, sessionId);
+            stmt.setLong(2, memberId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToAttendanceRecord(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding attendance record by session and member: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
     private AttendanceRecord mapResultSetToAttendanceRecord(ResultSet rs) throws SQLException {
         long id = rs.getLong("id");
         long sessionId = rs.getLong("session_id");

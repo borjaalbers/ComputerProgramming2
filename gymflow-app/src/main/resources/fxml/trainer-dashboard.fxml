@@ -31,8 +31,13 @@
                                     <TableColumn fx:id="classNameColumn" text="Class Name" prefWidth="200.0" />
                                     <TableColumn fx:id="classDateTimeColumn" text="Date &amp; Time" prefWidth="200.0" />
                                     <TableColumn fx:id="classCapacityColumn" text="Capacity" prefWidth="100.0" />
+                                    <TableColumn fx:id="classRegisteredColumn" text="Registered" prefWidth="100.0" />
                                 </columns>
                             </TableView>
+                            <HBox spacing="10.0">
+                                <Button text="Edit Class" onAction="#handleEditClass" />
+                                <Button text="Delete Class" onAction="#handleDeleteClass" />
+                            </HBox>
                         </children>
                     </VBox>
                 </Tab>

@@ -65,5 +65,23 @@ public interface AttendanceDao {
      * @return true if update was successful, false otherwise
      */
     boolean update(AttendanceRecord attendanceRecord);
+
+    /**
+     * Deletes an attendance record from the database.
+     *
+     * @param sessionId the class session ID
+     * @param memberId the member ID
+     * @return true if deletion was successful, false otherwise
+     */
+    boolean delete(long sessionId, long memberId);
+
+    /**
+     * Finds an attendance record by session ID and member ID.
+     *
+     * @param sessionId the class session ID
+     * @param memberId the member ID
+     * @return Optional containing the AttendanceRecord if found, empty otherwise
+     */
+    Optional<AttendanceRecord> findBySessionAndMember(long sessionId, long memberId);
 }
 

@@ -13,6 +13,7 @@ import com.gymflow.service.FileImportExportService;
 import com.gymflow.service.FileImportExportServiceImpl;
 import com.gymflow.service.WorkoutService;
 import com.gymflow.service.WorkoutServiceImpl;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -75,6 +76,9 @@ public class TrainerDashboardController {
 
     @FXML
     private TableColumn<ClassSession, Integer> classCapacityColumn;
+
+    @FXML
+    private TableColumn<ClassSession, String> classRegisteredColumn;
 
     @FXML
     private TableView<WorkoutPlan> workoutTable;
@@ -153,6 +157,17 @@ public class TrainerDashboardController {
             return new javafx.beans.property.SimpleStringProperty("");
         });
         classCapacityColumn.setCellValueFactory(new PropertyValueFactory<>("capacity"));
+        classRegisteredColumn.setCellValueFactory(cellData -> {
+            ClassSession session = cellData.getValue();
+            if (session != null) {
+                // Use a StringBinding that will update when the session changes
+                javafx.beans.property.StringProperty prop = new javafx.beans.property.SimpleStringProperty();
+                int registered = attendanceService.getRegisteredCount(session.getId());
+                prop.set(registered + "/" + session.getCapacity());
+                return prop;
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
     }
 
     private void setupWorkoutTable() {
@@ -178,13 +193,26 @@ public class TrainerDashboardController {
     private void loadClassSessions() {
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser != null) {
-            classSessions = FXCollections.observableArrayList(
-                classScheduleService.getClassSessionsByTrainer(currentUser.getId())
-            );
+            // Clear existing items first
+            if (classSessions != null) {
+                classSessions.clear();
+            }
+            
+            // Reload from database
+            List<ClassSession> sessions = classScheduleService.getClassSessionsByTrainer(currentUser.getId());
+            classSessions = FXCollections.observableArrayList(sessions);
             classTable.setItems(classSessions);
+            
+            // Force table refresh
+            classTable.refresh();
         } else {
-            classSessions = FXCollections.observableArrayList();
+            if (classSessions != null) {
+                classSessions.clear();
+            } else {
+                classSessions = FXCollections.observableArrayList();
+            }
             classTable.setItems(classSessions);
+            classTable.refresh();
         }
     }
 
@@ -230,6 +258,102 @@ public class TrainerDashboardController {
                 loadClassSessions(); // Refresh the table
             } else {
                 showErrorAlert("Error", "Failed to create class session");
+            }
+        }
+    }
+
+    @FXML
+    private void handleEditClass() {
+        ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
+        if (selectedSession == null) {
+            showErrorAlert("No Selection", "Please select a class to edit");
+            return;
+        }
+
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || selectedSession.getTrainerId() != currentUser.getId()) {
+            showErrorAlert("Error", "You can only edit your own classes");
+            return;
+        }
+
+        // Edit title
+        TextInputDialog titleDialog = new TextInputDialog(selectedSession.getTitle());
+        titleDialog.setTitle("Edit Class");
+        titleDialog.setHeaderText("Enter new class title");
+        titleDialog.setContentText("Class Title:");
+
+        Optional<String> titleResult = titleDialog.showAndWait();
+        if (titleResult.isPresent() && !titleResult.get().trim().isEmpty()) {
+            String newTitle = titleResult.get().trim();
+            
+            // Edit capacity
+            TextInputDialog capacityDialog = new TextInputDialog(String.valueOf(selectedSession.getCapacity()));
+            capacityDialog.setTitle("Edit Class");
+            capacityDialog.setHeaderText("Enter new capacity");
+            capacityDialog.setContentText("Capacity:");
+
+            Optional<String> capacityResult = capacityDialog.showAndWait();
+            if (capacityResult.isPresent()) {
+                try {
+                    int newCapacity = Integer.parseInt(capacityResult.get().trim());
+                    if (newCapacity <= 0) {
+                        showErrorAlert("Error", "Capacity must be greater than 0");
+                        return;
+                    }
+
+                    boolean success = classScheduleService.updateClassSession(
+                        selectedSession.getId(), newTitle, null, newCapacity
+                    );
+
+                    if (success) {
+                        showSuccessAlert("Success", "Class updated successfully!");
+                        // Clear selection first
+                        classTable.getSelectionModel().clearSelection();
+                        // Reload from database
+                        loadClassSessions();
+                        // Force immediate refresh of all cells
+                        javafx.application.Platform.runLater(() -> {
+                            classTable.refresh();
+                        });
+                    } else {
+                        showErrorAlert("Error", "Failed to update class");
+                    }
+                } catch (NumberFormatException e) {
+                    showErrorAlert("Error", "Invalid capacity");
+                }
+            }
+        }
+    }
+
+    @FXML
+    private void handleDeleteClass() {
+        ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
+        if (selectedSession == null) {
+            showErrorAlert("No Selection", "Please select a class to delete");
+            return;
+        }
+
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || selectedSession.getTrainerId() != currentUser.getId()) {
+            showErrorAlert("Error", "You can only delete your own classes");
+            return;
+        }
+
+        // Confirm deletion
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("Confirm Deletion");
+        confirmDialog.setHeaderText("Delete Class");
+        confirmDialog.setContentText("Are you sure you want to delete '" + selectedSession.getTitle() + "'? This action cannot be undone.");
+
+        Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            boolean success = classScheduleService.deleteClassSession(selectedSession.getId());
+
+            if (success) {
+                showSuccessAlert("Success", "Class deleted successfully!");
+                loadClassSessions(); // Refresh the table
+            } else {
+                showErrorAlert("Error", "Failed to delete class");
             }
         }
     }

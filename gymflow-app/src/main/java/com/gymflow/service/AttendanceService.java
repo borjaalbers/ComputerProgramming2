@@ -57,5 +57,40 @@ public interface AttendanceService {
      * @return list of all attendance records
      */
     List<AttendanceRecord> getAllAttendanceRecords();
+
+    /**
+     * Registers a member for a class session (creates attendance record with attended=false).
+     *
+     * @param sessionId the class session ID
+     * @param memberId the member ID
+     * @return Optional containing the AttendanceRecord if successful, empty otherwise
+     */
+    Optional<AttendanceRecord> registerForClass(long sessionId, long memberId);
+
+    /**
+     * Unregisters a member from a class session (removes attendance record).
+     *
+     * @param sessionId the class session ID
+     * @param memberId the member ID
+     * @return true if unregistration was successful, false otherwise
+     */
+    boolean unregisterFromClass(long sessionId, long memberId);
+
+    /**
+     * Checks if a member is registered for a class session.
+     *
+     * @param sessionId the class session ID
+     * @param memberId the member ID
+     * @return true if member is registered, false otherwise
+     */
+    boolean isRegisteredForClass(long sessionId, long memberId);
+
+    /**
+     * Gets the number of registered members for a class session.
+     *
+     * @param sessionId the class session ID
+     * @return number of registered members
+     */
+    int getRegisteredCount(long sessionId);
 }
 
