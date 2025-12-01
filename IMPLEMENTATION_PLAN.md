@@ -5,28 +5,28 @@ This document tracks all tasks required to complete the GymFlow project and achi
 ## Phase 1: Project Setup & Documentation ✅
 
 ### Documentation Requirements
-- [ ] **Project Title and Description** (200-300 words)
-  - [ ] Clear, descriptive project name
-  - [ ] Description of what the system does
-  - [ ] Identification of OOP as primary paradigm
-  - [ ] Document saved in `docs/proposal/`
+- [x] **Project Title and Description** (200-300 words)
+  - [x] Clear, descriptive project name
+  - [x] Description of what the system does
+  - [x] Identification of OOP as primary paradigm
+  - [x] Document saved in `docs/proposal/`
 
-- [ ] **Significance and Innovation**
-  - [ ] Explanation of project value
-  - [ ] Problem identification
-  - [ ] Uniqueness compared to existing solutions
-  - [ ] Target market/audience analysis
-  - [ ] Document saved in `docs/proposal/`
+- [x] **Significance and Innovation**
+  - [x] Explanation of project value
+  - [x] Problem identification
+  - [x] Uniqueness compared to existing solutions
+  - [x] Target market/audience analysis
+  - [x] Document saved in `docs/proposal/`
 
-- [ ] **User Analysis**
-  - [ ] Define at least 3 distinct user types (Member, Trainer, Administrator)
-  - [ ] Describe characteristics, needs, and technical proficiency for each
-  - [ ] Document saved in `docs/proposal/`
+- [x] **User Analysis**
+  - [x] Define at least 3 distinct user types (Member, Trainer, Administrator)
+  - [x] Describe characteristics, needs, and technical proficiency for each
+  - [x] Document saved in `docs/proposal/`
 
 - [ ] **Architecture Diagrams**
   - [ ] UML Class Diagram (showing inheritance hierarchy)
   - [ ] ER Diagram (database schema)
-  - [ ] System Flowchart (MVC architecture)
+  - [x] System Flowchart (MVC architecture) - mentioned in proposal
   - [ ] Sequence Diagrams (key workflows)
   - [ ] All diagrams saved in `docs/architecture-diagrams/`
 
@@ -44,8 +44,8 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] Additional model classes as needed (e.g., `Exercise`, `WorkoutTemplate`)
 
 ### Service Layer (Business Logic)
-- [ ] `AuthService` (interface) - authentication logic
-- [ ] `AuthServiceImpl` (implementation)
+- [x] `AuthService` (interface) - authentication logic
+- [x] `AuthServiceImpl` (implementation)
 - [ ] `WorkoutService` - workout plan management
 - [ ] `ClassScheduleService` - class scheduling
 - [ ] `AttendanceService` - attendance tracking
@@ -53,39 +53,44 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] `UserService` - user account management
 
 ### DAO Layer (Data Access)
-- [ ] `UserDao` (interface)
-- [ ] `UserDaoImpl` (JDBC implementation)
+- [x] `UserDao` (interface)
+- [x] `UserDaoImpl` (JDBC implementation)
 - [ ] `WorkoutPlanDao` (interface + implementation)
 - [ ] `ClassSessionDao` (interface + implementation)
 - [ ] `AttendanceDao` (interface + implementation)
 - [ ] `EquipmentDao` (interface + implementation)
 
 ### Controller Layer (JavaFX)
-- [x] `LoginController` (placeholder)
-- [ ] `MemberDashboardController`
-- [ ] `TrainerDashboardController`
-- [ ] `AdminDashboardController`
+- [x] `LoginController` (basic structure - **SIGN IN NOT FULLY WORKING**)
+- [x] `MemberDashboardController`
+- [x] `TrainerDashboardController`
+- [x] `AdminDashboardController`
 - [ ] `WorkoutPlanController`
 - [ ] `ClassScheduleController`
 - [ ] `AttendanceController`
 - [ ] `EquipmentController`
 
 ### Utility & Support Classes
-- [x] `PasswordHasher` (security)
+- [x] `PasswordHasher` (security - SHA-256 implementation)
 - [x] `CsvUtil` (file I/O placeholder)
 - [x] `DatabaseConfig` (configuration)
+- [x] `DatabaseConnection` (singleton pattern)
+- [x] `DatabaseInitializer` (database schema and seed data initialization)
+- [x] `SessionManager` (session management)
+- [x] `UserFactory` (factory pattern for User creation)
+- [x] `Role` (enum)
 - [ ] `FileImportExportService` (complete file I/O implementation)
 - [ ] Custom exception classes (e.g., `AuthenticationException`, `DataAccessException`)
 - [ ] Validation utilities
 
-**Total Classes Target:** 10+ (currently have 7 placeholders, need to complete and add more)
+**Total Classes Target:** 10+ (currently have ~15 classes, but need to add more domain models and complete functionality)
 
 ## Phase 3: Database Implementation
 
 ### Schema Design
 - [x] `schema.sql` created
-- [ ] Review and finalize table structure (3-5 related tables minimum)
-- [ ] Add foreign key constraints
+- [x] Review and finalize table structure (3-5 related tables minimum) - 6 tables created
+- [x] Add foreign key constraints - foreign keys defined in schema
 - [ ] Add indexes for performance
 - [ ] Add check constraints for data integrity
 
@@ -99,15 +104,22 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] Additional tables if needed (e.g., `exercises`, `workout_exercises`)
 
 ### Data Access Implementation
-- [ ] Create `DatabaseConnection` class (singleton pattern)
-- [ ] Implement all DAO interfaces with JDBC
+- [x] Create `DatabaseConnection` class (singleton pattern)
+- [x] Implement UserDao with JDBC (try-with-resources used)
+- [ ] Implement all other DAO interfaces with JDBC
 - [ ] Add connection pooling (optional but recommended)
 - [ ] Implement transaction management
-- [ ] Add proper resource cleanup (try-with-resources)
+- [x] Add proper resource cleanup (try-with-resources) - implemented in UserDaoImpl
+
+### Database Initialization
+- [x] **CRITICAL: Database schema not automatically initialized on startup** ✅ FIXED
+- [x] Create database initialization service/utility - `DatabaseInitializer` created
+- [x] Auto-create tables if they don't exist - implemented in `DatabaseInitializer`
+- [x] Auto-insert seed data on first run - implemented with test users (password: "password123")
 
 ### Seed Data
 - [x] `seed-data.sql` created
-- [ ] Complete seed data with realistic test users
+- [ ] Complete seed data with realistic test users (hashes need to be generated)
 - [ ] Add sample workout plans
 - [ ] Add sample class sessions
 - [ ] Add sample equipment entries
@@ -115,10 +127,10 @@ This document tracks all tasks required to complete the GymFlow project and achi
 ## Phase 4: JavaFX GUI Implementation
 
 ### FXML Views
-- [x] `login.fxml` (placeholder)
-- [ ] `member-dashboard.fxml`
-- [ ] `trainer-dashboard.fxml`
-- [ ] `admin-dashboard.fxml`
+- [x] `login.fxml` (created)
+- [x] `member-dashboard.fxml` (created)
+- [x] `trainer-dashboard.fxml` (created)
+- [x] `admin-dashboard.fxml` (created)
 - [ ] `workout-plan-view.fxml`
 - [ ] `class-schedule-view.fxml`
 - [ ] `attendance-view.fxml`
@@ -126,12 +138,12 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] `user-management.fxml` (admin only)
 
 ### Controllers
-- [x] `LoginController` (basic structure)
-- [ ] Complete login authentication flow
-- [ ] Implement role-based navigation
-- [ ] Wire up all FXML views to controllers
-- [ ] Implement data binding (ObservableList, Property)
-- [ ] Add input validation in controllers
+- [x] `LoginController` (basic structure - **SIGN IN NOT FULLY WORKING**)
+- [x] Complete login authentication flow (implemented but needs debugging)
+- [x] Implement role-based navigation (implemented)
+- [x] Wire up dashboard FXML views to controllers (done)
+- [ ] Implement data binding (ObservableList, Property) - needed for future features
+- [x] Add input validation in controllers (basic validation in LoginController)
 
 ### UI/UX Features
 - [ ] Responsive layouts
@@ -145,20 +157,20 @@ This document tracks all tasks required to complete the GymFlow project and achi
 ## Phase 5: Multi-User & Authentication
 
 ### Authentication System
-- [ ] Complete `PasswordHasher` implementation (consider BCrypt)
-- [ ] Implement login flow in `AuthService`
-- [ ] Store session state (current user, role)
-- [ ] Add logout functionality
+- [x] Complete `PasswordHasher` implementation (SHA-256 - consider BCrypt for production)
+- [x] Implement login flow in `AuthService` (implemented but **NOT FULLY WORKING**)
+- [x] Store session state (current user, role) - SessionManager implemented
+- [x] Add logout functionality - implemented in all dashboard controllers
 - [ ] Password reset flow (optional)
 
 ### Authorization (Role-Based Access)
-- [ ] Define access levels for each role:
-  - [ ] Member: Read-only personal data
-  - [ ] Trainer: Workout creation, class management
-  - [ ] Administrator: Full system access
-- [ ] Implement authorization checks in services
-- [ ] Add UI visibility controls based on role
-- [ ] Prevent unauthorized actions
+- [x] Define access levels for each role:
+  - [x] Member: Read-only personal data (dashboard shows user info)
+  - [x] Trainer: Workout creation, class management (dashboard created)
+  - [x] Administrator: Full system access (dashboard created)
+- [ ] Implement authorization checks in services (not yet implemented)
+- [x] Add UI visibility controls based on role (different dashboards per role)
+- [ ] Prevent unauthorized actions (needs service-level checks)
 
 ### Concurrent User Support
 - [ ] Test multiple simultaneous logins
@@ -213,18 +225,18 @@ This document tracks all tasks required to complete the GymFlow project and achi
 
 ### Test Classes to Create
 - [x] `PasswordHasherTest` (basic test exists)
-- [ ] `AuthServiceTest`
+- [x] `AuthServiceTest` (integration test with H2)
+- [x] `UserDaoTest` (integration test with H2)
 - [ ] `WorkoutServiceTest`
 - [ ] `ClassScheduleServiceTest`
 - [ ] `AttendanceServiceTest`
-- [ ] `UserDaoTest`
 - [ ] `WorkoutPlanDaoTest`
 - [ ] `CsvUtilTest`
 - [ ] Additional tests for edge cases
 
 ### Test Organization
-- [ ] All tests in `src/test/java/com/gymflow/`
-- [ ] Use JUnit 5
+- [x] All tests in `src/test/java/com/gymflow/`
+- [x] Use JUnit 5
 - [ ] Use Mockito for mocking (if needed)
 - [ ] Test reports saved in `docs/test-reports/`
 
@@ -252,10 +264,10 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] Remove all TODO comments or address them
 
 ### OOP Principles
-- [ ] Demonstrate inheritance (User hierarchy) ✅
-- [ ] Use abstraction (abstract classes, interfaces)
-- [ ] Encapsulation (private fields, getters/setters)
-- [ ] Polymorphism (method overriding, interface implementations)
+- [x] Demonstrate inheritance (User hierarchy) ✅ - User abstract class, Member/Trainer/Admin extend it
+- [x] Use abstraction (abstract classes, interfaces) - User is abstract, AuthService/UserDao are interfaces
+- [x] Encapsulation (private fields, getters/setters) - all model classes use encapsulation
+- [x] Polymorphism (method overriding, interface implementations) - UserFactory uses polymorphism, interfaces implemented
 
 ### Git & Version Control
 - [ ] Regular commits with descriptive messages
@@ -309,18 +321,47 @@ This document tracks all tasks required to complete the GymFlow project and achi
 
 Ensure each requirement is explicitly addressed:
 
-- [ ] **10+ Java classes** with inheritance hierarchy ✅ (structure in place, need completion)
-- [ ] **Database** with 3-5 related tables ✅ (schema created)
-- [ ] **GUI interface** using JavaFX ✅ (structure in place)
-- [ ] **File I/O operations** for data import/export (placeholder exists)
-- [ ] **Exception handling** throughout the application (need implementation)
-- [ ] **Unit testing** for core functionality (one test exists)
-- [ ] **Data persistence** across sessions (need implementation)
-- [ ] **OOP principles** demonstrated (inheritance ✅, need abstraction/interfaces)
-- [ ] **Multi-user support** with authentication/authorization (structure in place)
+- [x] **10+ Java classes** with inheritance hierarchy ✅ (~15 classes implemented: User hierarchy, services, DAOs, controllers, utilities)
+- [x] **Database** with 3-5 related tables ✅ (6 tables in schema: roles, users, workout_plans, class_sessions, attendance_records, equipment)
+- [x] **GUI interface** using JavaFX ✅ (login + 3 dashboards created, basic navigation working)
+- [ ] **File I/O operations** for data import/export (CsvUtil placeholder exists, needs implementation)
+- [ ] **Exception handling** throughout the application (basic try-catch in place, need custom exceptions)
+- [x] **Unit testing** for core functionality (3 test classes: PasswordHasherTest, AuthServiceTest, UserDaoTest)
+- [ ] **Data persistence** across sessions (database connection works, but schema not auto-initialized)
+- [x] **OOP principles** demonstrated (inheritance ✅, abstraction ✅, interfaces ✅, polymorphism ✅)
+- [x] **Multi-user support** with authentication/authorization (structure in place, but sign-in not working)
 
 ---
 
-**Last Updated:** [Date]
-**Current Status:** Phase 1 Complete, Phase 2-11 In Progress
+## Current Priority Issues
+
+### 🟡 HIGH PRIORITY: Sign-In Needs Testing
+- Login flow is implemented
+- Database initialization is now fixed
+- Test users created: member_demo, trainer_demo, admin_demo (password: "password123")
+- **Action Required:** Test sign-in functionality to verify it works
+
+### ✅ FIXED: Database Not Auto-Initialized
+- DatabaseInitializer created and integrated into MainApp
+- Tables are now auto-created on startup
+- Seed data with proper password hashes is inserted
+
+### 🟡 HIGH PRIORITY: Missing Domain Models
+- Need to create: `WorkoutPlan`, `ClassSession`, `AttendanceRecord`, `Equipment` model classes
+- These are required for core functionality
+
+### 🟡 HIGH PRIORITY: Missing Services & DAOs
+- Need to implement services and DAOs for workout plans, classes, attendance, equipment
+- Required for dashboard functionality
+
+---
+
+**Last Updated:** 2024-12-19
+**Current Status:** 
+- Phase 1: Mostly Complete (diagrams needed)
+- Phase 2: Partially Complete (~15 classes, need domain models)
+- Phase 3: Schema created but not auto-initialized
+- Phase 4: Basic dashboards created, login needs fixing
+- Phase 5: Authentication structure in place but not working
+- Phase 6-11: Not Started
 
