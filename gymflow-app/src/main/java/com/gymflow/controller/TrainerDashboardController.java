@@ -9,6 +9,8 @@ import com.gymflow.service.AttendanceService;
 import com.gymflow.service.AttendanceServiceImpl;
 import com.gymflow.service.ClassScheduleService;
 import com.gymflow.service.ClassScheduleServiceImpl;
+import com.gymflow.service.FileImportExportService;
+import com.gymflow.service.FileImportExportServiceImpl;
 import com.gymflow.service.WorkoutService;
 import com.gymflow.service.WorkoutServiceImpl;
 import javafx.collections.FXCollections;
@@ -24,11 +26,15 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -89,6 +95,7 @@ public class TrainerDashboardController {
     private final WorkoutService workoutService;
     private final ClassScheduleService classScheduleService;
     private final AttendanceService attendanceService;
+    private final FileImportExportService fileService;
 
     private ObservableList<ClassSession> classSessions;
     private ObservableList<WorkoutPlan> workoutPlans;
@@ -98,6 +105,7 @@ public class TrainerDashboardController {
         this.workoutService = new WorkoutServiceImpl();
         this.classScheduleService = new ClassScheduleServiceImpl();
         this.attendanceService = new AttendanceServiceImpl();
+        this.fileService = new FileImportExportServiceImpl();
     }
 
     @FXML
@@ -222,6 +230,103 @@ public class TrainerDashboardController {
                 loadClassSessions(); // Refresh the table
             } else {
                 showErrorAlert("Error", "Failed to create class session");
+            }
+        }
+    }
+
+    @FXML
+    private void handleExportWorkoutPlans() {
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null) {
+            showErrorAlert("Error", "No user logged in");
+            return;
+        }
+
+        List<WorkoutPlan> plans = workoutService.getWorkoutPlansByTrainer(currentUser.getId());
+        if (plans.isEmpty()) {
+            showErrorAlert("No Data", "You have no workout plans to export");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Workout Plans");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialFileName("workout_plans_" + System.currentTimeMillis() + ".csv");
+
+        Stage stage = (Stage) workoutTable.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null) {
+            try {
+                fileService.exportWorkoutTemplates(plans, file.getAbsolutePath());
+                showSuccessAlert("Export Successful", 
+                    String.format("Exported %d workout plan(s) to %s", plans.size(), file.getName()));
+            } catch (IOException e) {
+                showErrorAlert("Export Error", "Failed to export workout plans: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML
+    private void handleImportWorkoutPlans() {
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null) {
+            showErrorAlert("Error", "No user logged in");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Workout Plans");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+
+        Stage stage = (Stage) workoutTable.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
+
+        if (file != null) {
+            try {
+                fileService.validateFile(file.getAbsolutePath());
+                List<WorkoutPlan> importedPlans = fileService.importWorkoutTemplates(file.getAbsolutePath());
+                
+                if (importedPlans.isEmpty()) {
+                    showErrorAlert("Import Error", "No valid workout plans found in the file");
+                    return;
+                }
+
+                // Import each plan (they will have id=0, so they'll be created as new)
+                int successCount = 0;
+                int failCount = 0;
+
+                for (WorkoutPlan plan : importedPlans) {
+                    // Use the current trainer's ID for all imported plans
+                    Optional<WorkoutPlan> created = workoutService.createWorkoutPlan(
+                        plan.getMemberId(), currentUser.getId(), plan.getTitle(),
+                        plan.getDescription(), plan.getDifficulty()
+                    );
+                    if (created.isPresent()) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                }
+
+                String message = String.format("Imported %d workout plan(s) successfully", successCount);
+                if (failCount > 0) {
+                    message += String.format(", %d failed", failCount);
+                }
+                showSuccessAlert("Import Complete", message);
+                loadWorkoutPlans(); // Refresh the table
+            } catch (FileNotFoundException e) {
+                showErrorAlert("File Not Found", "The selected file could not be found");
+            } catch (IllegalArgumentException e) {
+                showErrorAlert("Invalid File", e.getMessage());
+            } catch (IOException e) {
+                showErrorAlert("Import Error", "Failed to import workout plans: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }

@@ -34,6 +34,13 @@ public interface AttendanceDao {
     List<AttendanceRecord> findByMemberId(long memberId);
 
     /**
+     * Finds all attendance records in the system.
+     *
+     * @return list of all attendance records
+     */
+    List<AttendanceRecord> findAll();
+
+    /**
      * Marks attendance for a member in a class session.
      *
      * @param sessionId the class session ID

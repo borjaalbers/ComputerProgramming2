@@ -86,8 +86,7 @@
                                 </children>
                             </GridPane>
                             <HBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
-                                <Button text="Generate Report" />
-                                <Button text="Export Data" />
+                                <Button text="Export Attendance Report" onAction="#handleExportAttendanceReport" />
                             </HBox>
                         </children>
                     </VBox>

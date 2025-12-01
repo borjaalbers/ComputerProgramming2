@@ -106,6 +106,32 @@ public class AttendanceDaoImpl implements AttendanceDao {
     }
 
     @Override
+    public List<AttendanceRecord> findAll() {
+        String sql = """
+            SELECT id, session_id, member_id, attended
+            FROM attendance_records
+            ORDER BY id DESC
+            """;
+
+        List<AttendanceRecord> records = new ArrayList<>();
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    records.add(mapResultSetToAttendanceRecord(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding all attendance records: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return records;
+    }
+
+    @Override
     public Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) {
         // First check if record already exists
         String findSql = """

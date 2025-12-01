@@ -43,6 +43,8 @@
                             <HBox alignment="CENTER_LEFT" spacing="10.0">
                                 <Label text="Workout Plans I Manage" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
                                 <Region HBox.hgrow="ALWAYS" />
+                                <Button text="Export" onAction="#handleExportWorkoutPlans" />
+                                <Button text="Import" onAction="#handleImportWorkoutPlans" />
                                 <Button text="Create Workout Plan" onAction="#handleCreateWorkoutPlan" />
                             </HBox>
                             <TableView fx:id="workoutTable" prefHeight="400.0">

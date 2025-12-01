@@ -2,14 +2,19 @@ package com.gymflow.controller;
 
 import com.gymflow.dao.UserDao;
 import com.gymflow.dao.UserDaoImpl;
+import com.gymflow.model.AttendanceRecord;
 import com.gymflow.model.Equipment;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.security.SessionManager;
+import com.gymflow.service.AttendanceService;
+import com.gymflow.service.AttendanceServiceImpl;
 import com.gymflow.service.ClassScheduleService;
 import com.gymflow.service.ClassScheduleServiceImpl;
 import com.gymflow.service.EquipmentService;
 import com.gymflow.service.EquipmentServiceImpl;
+import com.gymflow.service.FileImportExportService;
+import com.gymflow.service.FileImportExportServiceImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -23,10 +28,13 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -81,6 +89,8 @@ public class AdminDashboardController {
     private final UserDao userDao;
     private final ClassScheduleService classScheduleService;
     private final EquipmentService equipmentService;
+    private final AttendanceService attendanceService;
+    private final FileImportExportService fileService;
 
     private ObservableList<Equipment> equipmentList;
 
@@ -89,6 +99,8 @@ public class AdminDashboardController {
         this.userDao = new UserDaoImpl();
         this.classScheduleService = new ClassScheduleServiceImpl();
         this.equipmentService = new EquipmentServiceImpl();
+        this.attendanceService = new AttendanceServiceImpl();
+        this.fileService = new FileImportExportServiceImpl();
     }
 
     @FXML
@@ -170,6 +182,38 @@ public class AdminDashboardController {
                 loadSystemStats(); // Refresh statistics
             } else {
                 showErrorAlert("Error", "Failed to add equipment");
+            }
+        }
+    }
+
+    @FXML
+    private void handleExportAttendanceReport() {
+        // Get all attendance records
+        List<AttendanceRecord> allRecords = attendanceService.getAllAttendanceRecords();
+
+        if (allRecords.isEmpty()) {
+            showErrorAlert("No Data", "No attendance records found to export");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Attendance Report");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialFileName("attendance_report_" + System.currentTimeMillis() + ".csv");
+
+        Stage stage = (Stage) equipmentTable.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null) {
+            try {
+                fileService.exportAttendanceReport(allRecords, file.getAbsolutePath());
+                showSuccessAlert("Export Successful", 
+                    String.format("Exported %d attendance record(s) to %s", allRecords.size(), file.getName()));
+            } catch (IOException e) {
+                showErrorAlert("Export Error", "Failed to export attendance report: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }

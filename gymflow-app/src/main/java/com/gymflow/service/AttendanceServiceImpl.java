@@ -75,5 +75,10 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .filter(AttendanceRecord::isAttended)
                 .count();
     }
+
+    @Override
+    public List<AttendanceRecord> getAllAttendanceRecords() {
+        return attendanceDao.findAll();
+    }
 }
 

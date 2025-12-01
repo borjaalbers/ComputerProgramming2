@@ -50,5 +50,12 @@ public interface AttendanceService {
      * @return number of members who attended
      */
     int getAttendanceCount(long sessionId);
+
+    /**
+     * Gets all attendance records in the system.
+     *
+     * @return list of all attendance records
+     */
+    List<AttendanceRecord> getAllAttendanceRecords();
 }
 
