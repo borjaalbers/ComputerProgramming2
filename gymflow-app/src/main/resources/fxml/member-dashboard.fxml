@@ -25,17 +25,21 @@
                             <TableView fx:id="workoutTable" prefHeight="400.0">
                                 <columns>
                                     <TableColumn fx:id="workoutTitleColumn" text="Title" prefWidth="150.0" />
-                                    <TableColumn fx:id="workoutTypeColumn" text="Type" prefWidth="120.0" />
-                                    <TableColumn fx:id="workoutMuscleGroupColumn" text="Muscle Group" prefWidth="120.0" />
-                                    <TableColumn fx:id="workoutDifficultyColumn" text="Difficulty" prefWidth="100.0" />
-                                    <TableColumn fx:id="workoutDurationColumn" text="Duration" prefWidth="80.0" />
-                                    <TableColumn fx:id="workoutSetsRepsColumn" text="Sets x Reps" prefWidth="100.0" />
+                                    <TableColumn fx:id="workoutSourceColumn" text="Source" prefWidth="150.0" />
+                                    <TableColumn fx:id="workoutTypeColumn" text="Type" prefWidth="100.0" />
+                                    <TableColumn fx:id="workoutMuscleGroupColumn" text="Muscle Group" prefWidth="100.0" />
+                                    <TableColumn fx:id="workoutDifficultyColumn" text="Difficulty" prefWidth="80.0" />
+                                    <TableColumn fx:id="workoutDurationColumn" text="Duration" prefWidth="70.0" />
+                                    <TableColumn fx:id="workoutSetsRepsColumn" text="Sets x Reps" prefWidth="90.0" />
+                                    <TableColumn fx:id="workoutStatusColumn" text="Status" prefWidth="80.0" />
                                     <TableColumn fx:id="workoutCreatedColumn" text="Created" prefWidth="120.0" />
                                 </columns>
                             </TableView>
                             <HBox spacing="10.0">
-                                <Button text="View Details" />
-                                <Button text="Start Workout" />
+                                <Button fx:id="viewDetailsButton" text="View Details" onAction="#handleViewDetails" />
+                                <Button fx:id="markCompletedButton" text="Mark as Completed" onAction="#handleMarkCompleted" />
+                                <Button fx:id="deleteWorkoutButton" text="Delete" onAction="#handleDeleteWorkout" 
+                                        style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
                             </HBox>
                         </children>
                     </VBox>

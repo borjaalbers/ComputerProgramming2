@@ -55,3 +55,12 @@ CREATE TABLE IF NOT EXISTS equipment (
     status VARCHAR(50) DEFAULT 'AVAILABLE',
     last_service DATE
 );
+
+CREATE TABLE IF NOT EXISTS workout_completions (
+    id SERIAL PRIMARY KEY,
+    workout_plan_id INTEGER REFERENCES workout_plans(id),
+    member_id INTEGER REFERENCES users(id),
+    class_session_id INTEGER REFERENCES class_sessions(id),
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);

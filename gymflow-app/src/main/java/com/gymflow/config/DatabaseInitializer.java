@@ -128,6 +128,21 @@ public class DatabaseInitializer {
                 last_service DATE
             )
             """);
+
+        // Create workout_completions table
+        stmt.execute("""
+            CREATE TABLE IF NOT EXISTS workout_completions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                workout_plan_id INT,
+                member_id INT,
+                class_session_id INT,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT,
+                FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id),
+                FOREIGN KEY (member_id) REFERENCES users(id),
+                FOREIGN KEY (class_session_id) REFERENCES class_sessions(id)
+            )
+            """);
     }
 
     /**
@@ -234,6 +249,30 @@ public class DatabaseInitializer {
                 System.out.println("Added workout_plan_id column to class_sessions");
             } catch (SQLException ex) {
                 System.out.println("Could not add workout_plan_id column: " + ex.getMessage());
+            }
+        }
+        
+        // Create workout_completions table if it doesn't exist
+        try {
+            stmt.executeQuery("SELECT id FROM workout_completions LIMIT 1");
+        } catch (SQLException e) {
+            try {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS workout_completions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        workout_plan_id INT,
+                        member_id INT,
+                        class_session_id INT,
+                        completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        notes TEXT,
+                        FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id),
+                        FOREIGN KEY (member_id) REFERENCES users(id),
+                        FOREIGN KEY (class_session_id) REFERENCES class_sessions(id)
+                    )
+                    """);
+                System.out.println("Created workout_completions table");
+            } catch (SQLException ex) {
+                System.out.println("Could not create workout_completions table: " + ex.getMessage());
             }
         }
     }
