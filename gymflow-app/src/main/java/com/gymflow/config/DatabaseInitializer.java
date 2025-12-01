@@ -24,15 +24,20 @@ public class DatabaseInitializer {
      * @throws SQLException if database initialization fails
      */
     public void initialize() throws SQLException {
-        try (Connection conn = dbConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
-
+        Connection conn = dbConnection.getConnection();
+        try (Statement stmt = conn.createStatement()) {
+            System.out.println("Creating database tables...");
+            
             // Create tables (H2-compatible syntax)
             createTables(stmt);
+            System.out.println("Database tables created successfully.");
 
             // Insert seed data
+            System.out.println("Inserting seed data...");
             insertSeedData(stmt);
+            System.out.println("Seed data inserted successfully.");
         }
+        // Note: We don't close the connection here - DatabaseConnection singleton maintains it
     }
 
     /**
@@ -116,34 +121,46 @@ public class DatabaseInitializer {
      */
     private void insertSeedData(Statement stmt) throws SQLException {
         // Insert roles
+        int rolesInserted = 0;
         try {
             stmt.execute("INSERT INTO roles (id, name) VALUES (1, 'MEMBER')");
+            rolesInserted++;
         } catch (SQLException e) {
             // Role already exists, ignore
         }
         try {
             stmt.execute("INSERT INTO roles (id, name) VALUES (2, 'TRAINER')");
+            rolesInserted++;
         } catch (SQLException e) {
             // Role already exists, ignore
         }
         try {
             stmt.execute("INSERT INTO roles (id, name) VALUES (3, 'ADMIN')");
+            rolesInserted++;
         } catch (SQLException e) {
             // Role already exists, ignore
+        }
+        if (rolesInserted > 0) {
+            System.out.println("Inserted " + rolesInserted + " role(s)");
         }
 
         // Insert test users with hashed passwords
         // Password for all demo users: "password123"
         String passwordHash = PasswordHasher.sha256("password123");
+        System.out.println("Password hash for test users: " + passwordHash.substring(0, 16) + "...");
 
+        int usersInserted = 0;
         // Member user
         try {
             stmt.execute(String.format("""
                 INSERT INTO users (id, role_id, username, password_hash, full_name, email)
                 VALUES (1, 1, 'member_demo', '%s', 'Demo Member', 'member@gymflow.local')
                 """, passwordHash));
+            usersInserted++;
+            System.out.println("Created test user: member_demo");
         } catch (SQLException e) {
             // User already exists, ignore
+            System.out.println("User member_demo already exists");
         }
 
         // Trainer user
@@ -152,8 +169,11 @@ public class DatabaseInitializer {
                 INSERT INTO users (id, role_id, username, password_hash, full_name, email)
                 VALUES (2, 2, 'trainer_demo', '%s', 'Demo Trainer', 'trainer@gymflow.local')
                 """, passwordHash));
+            usersInserted++;
+            System.out.println("Created test user: trainer_demo");
         } catch (SQLException e) {
             // User already exists, ignore
+            System.out.println("User trainer_demo already exists");
         }
 
         // Admin user
@@ -162,8 +182,15 @@ public class DatabaseInitializer {
                 INSERT INTO users (id, role_id, username, password_hash, full_name, email)
                 VALUES (3, 3, 'admin_demo', '%s', 'Demo Admin', 'admin@gymflow.local')
                 """, passwordHash));
+            usersInserted++;
+            System.out.println("Created test user: admin_demo");
         } catch (SQLException e) {
             // User already exists, ignore
+            System.out.println("User admin_demo already exists");
+        }
+        
+        if (usersInserted > 0) {
+            System.out.println("Inserted " + usersInserted + " test user(s)");
         }
     }
 }

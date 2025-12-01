@@ -33,6 +33,9 @@ public class LoginController {
     @FXML
     private Button loginButton;
 
+    @FXML
+    private Button signUpButton;
+
     private final AuthService authService;
     private final SessionManager sessionManager;
 
@@ -44,10 +47,27 @@ public class LoginController {
     @FXML
     private void initialize() {
         loginButton.setOnAction(event -> handleLogin());
+        signUpButton.setOnAction(event -> handleSignUp());
         
         // Allow login on Enter key press
         passwordField.setOnAction(event -> handleLogin());
         usernameField.setOnAction(event -> passwordField.requestFocus());
+    }
+
+    private void handleSignUp() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/register.fxml"));
+            Parent root = loader.load();
+            
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            Scene scene = new Scene(root, 960, 600);
+            stage.setScene(scene);
+            stage.setTitle("GymFlow - Sign Up");
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            showErrorAlert("Navigation Error", "Failed to load registration screen: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void handleLogin() {

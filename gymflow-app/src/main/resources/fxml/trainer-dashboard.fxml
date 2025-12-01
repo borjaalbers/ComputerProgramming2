@@ -29,7 +29,7 @@
                             <TableView fx:id="classTable" prefHeight="400.0">
                                 <columns>
                                     <TableColumn text="Class Name" prefWidth="200.0" />
-                                    <TableColumn text="Date & Time" prefWidth="200.0" />
+                                    <TableColumn text="Date &amp; Time" prefWidth="200.0" />
                                     <TableColumn text="Capacity" prefWidth="100.0" />
                                     <TableColumn text="Registered" prefWidth="100.0" />
                                     <TableColumn text="Actions" prefWidth="150.0" />

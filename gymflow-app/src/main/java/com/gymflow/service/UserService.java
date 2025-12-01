@@ -1,4 +1,4 @@
-package com.gymflow.dao;
+package com.gymflow.service;
 
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
@@ -6,20 +6,19 @@ import com.gymflow.model.User;
 import java.util.Optional;
 
 /**
- * Data access contract for user entities.
+ * Service interface for user management operations.
  */
-public interface UserDao {
-    Optional<User> findByUsername(String username);
-    
+public interface UserService {
     /**
-     * Creates a new user in the database.
+     * Creates a new user account.
      *
      * @param username the username (must be unique)
-     * @param passwordHash the hashed password
+     * @param password the plain text password (will be hashed)
      * @param fullName the user's full name
      * @param email the user's email
      * @param role the user's role
      * @return Optional containing the created User if successful, empty if username already exists
      */
-    Optional<User> create(String username, String passwordHash, String fullName, String email, Role role);
+    Optional<User> createUser(String username, String password, String fullName, String email, Role role);
 }
+

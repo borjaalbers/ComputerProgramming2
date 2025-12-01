@@ -46,7 +46,7 @@
                                 <columns>
                                     <TableColumn text="Class Name" prefWidth="200.0" />
                                     <TableColumn text="Trainer" prefWidth="150.0" />
-                                    <TableColumn text="Date & Time" prefWidth="200.0" />
+                                    <TableColumn text="Date &amp; Time" prefWidth="200.0" />
                                     <TableColumn text="Capacity" prefWidth="100.0" />
                                 </columns>
                             </TableView>

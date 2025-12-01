@@ -16,6 +16,16 @@ public class DatabaseConnection {
     private final String username;
     private final String password;
 
+    static {
+        // Explicitly load H2 driver to ensure it's available
+        try {
+            Class.forName("org.h2.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println("H2 Driver not found. Make sure h2 dependency is included.");
+            e.printStackTrace();
+        }
+    }
+
     private DatabaseConnection() {
         Properties props = DatabaseConfig.load();
         this.url = props.getProperty("url");

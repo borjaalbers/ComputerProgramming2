@@ -34,27 +34,38 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public Optional<User> authenticate(String username, String password) {
-        // First, find the user by username
-        Optional<User> userOpt = userDao.findByUsername(username);
-        
-        if (userOpt.isEmpty()) {
+        try {
+            // First, find the user by username
+            Optional<User> userOpt = userDao.findByUsername(username);
+            
+            if (userOpt.isEmpty()) {
+                System.out.println("Authentication failed: User '" + username + "' not found");
+                return Optional.empty();
+            }
+
+            // Get the stored password hash from database
+            String storedPasswordHash = getPasswordHash(username);
+            if (storedPasswordHash == null) {
+                System.out.println("Authentication failed: Could not retrieve password hash for '" + username + "'");
+                return Optional.empty();
+            }
+
+            // Hash the provided password and compare
+            String providedPasswordHash = PasswordHasher.sha256(password);
+            
+            if (storedPasswordHash.equals(providedPasswordHash)) {
+                System.out.println("Authentication successful for user: " + username);
+                return userOpt;
+            } else {
+                System.out.println("Authentication failed: Invalid password for user '" + username + "'");
+            }
+
+            return Optional.empty();
+        } catch (Exception e) {
+            System.err.println("Error during authentication: " + e.getMessage());
+            e.printStackTrace();
             return Optional.empty();
         }
-
-        // Get the stored password hash from database
-        String storedPasswordHash = getPasswordHash(username);
-        if (storedPasswordHash == null) {
-            return Optional.empty();
-        }
-
-        // Hash the provided password and compare
-        String providedPasswordHash = PasswordHasher.sha256(password);
-        
-        if (storedPasswordHash.equals(providedPasswordHash)) {
-            return userOpt;
-        }
-
-        return Optional.empty();
     }
 
     /**

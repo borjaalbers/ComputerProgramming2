@@ -46,22 +46,24 @@ This document tracks all tasks required to complete the GymFlow project and achi
 ### Service Layer (Business Logic)
 - [x] `AuthService` (interface) - authentication logic
 - [x] `AuthServiceImpl` (implementation)
+- [x] `UserService` (interface) - user account management
+- [x] `UserServiceImpl` (implementation) - user registration
 - [ ] `WorkoutService` - workout plan management
 - [ ] `ClassScheduleService` - class scheduling
 - [ ] `AttendanceService` - attendance tracking
 - [ ] `EquipmentService` - equipment management
-- [ ] `UserService` - user account management
 
 ### DAO Layer (Data Access)
-- [x] `UserDao` (interface)
-- [x] `UserDaoImpl` (JDBC implementation)
+- [x] `UserDao` (interface) - includes create method
+- [x] `UserDaoImpl` (JDBC implementation) - includes user creation
 - [ ] `WorkoutPlanDao` (interface + implementation)
 - [ ] `ClassSessionDao` (interface + implementation)
 - [ ] `AttendanceDao` (interface + implementation)
 - [ ] `EquipmentDao` (interface + implementation)
 
 ### Controller Layer (JavaFX)
-- [x] `LoginController` (basic structure - **SIGN IN NOT FULLY WORKING**)
+- [x] `LoginController` (with Sign Up navigation)
+- [x] `RegistrationController` (new user sign-up)
 - [x] `MemberDashboardController`
 - [x] `TrainerDashboardController`
 - [x] `AdminDashboardController`
@@ -127,7 +129,8 @@ This document tracks all tasks required to complete the GymFlow project and achi
 ## Phase 4: JavaFX GUI Implementation
 
 ### FXML Views
-- [x] `login.fxml` (created)
+- [x] `login.fxml` (created with Sign Up button)
+- [x] `register.fxml` (new user registration screen)
 - [x] `member-dashboard.fxml` (created)
 - [x] `trainer-dashboard.fxml` (created)
 - [x] `admin-dashboard.fxml` (created)
@@ -138,8 +141,8 @@ This document tracks all tasks required to complete the GymFlow project and achi
 - [ ] `user-management.fxml` (admin only)
 
 ### Controllers
-- [x] `LoginController` (basic structure - **SIGN IN NOT FULLY WORKING**)
-- [x] Complete login authentication flow (implemented but needs debugging)
+- [x] `LoginController` (basic structure - **READY FOR TESTING**)
+- [x] Complete login authentication flow (implemented with improved error handling)
 - [x] Implement role-based navigation (implemented)
 - [x] Wire up dashboard FXML views to controllers (done)
 - [ ] Implement data binding (ObservableList, Property) - needed for future features
@@ -158,9 +161,10 @@ This document tracks all tasks required to complete the GymFlow project and achi
 
 ### Authentication System
 - [x] Complete `PasswordHasher` implementation (SHA-256 - consider BCrypt for production)
-- [x] Implement login flow in `AuthService` (implemented but **NOT FULLY WORKING**)
+- [x] Implement login flow in `AuthService` (implemented with improved logging and error handling)
 - [x] Store session state (current user, role) - SessionManager implemented
 - [x] Add logout functionality - implemented in all dashboard controllers
+- [x] Database initialization with H2 persistence (DB_CLOSE_DELAY=-1)
 - [ ] Password reset flow (optional)
 
 ### Authorization (Role-Based Access)
@@ -327,7 +331,7 @@ Ensure each requirement is explicitly addressed:
 - [ ] **File I/O operations** for data import/export (CsvUtil placeholder exists, needs implementation)
 - [ ] **Exception handling** throughout the application (basic try-catch in place, need custom exceptions)
 - [x] **Unit testing** for core functionality (3 test classes: PasswordHasherTest, AuthServiceTest, UserDaoTest)
-- [ ] **Data persistence** across sessions (database connection works, but schema not auto-initialized)
+- [x] **Data persistence** across sessions (database auto-initialized with DB_CLOSE_DELAY=-1 for H2)
 - [x] **OOP principles** demonstrated (inheritance ✅, abstraction ✅, interfaces ✅, polymorphism ✅)
 - [x] **Multi-user support** with authentication/authorization (structure in place, but sign-in not working)
 
@@ -335,11 +339,12 @@ Ensure each requirement is explicitly addressed:
 
 ## Current Priority Issues
 
-### 🟡 HIGH PRIORITY: Sign-In Needs Testing
+### ✅ IMPROVED: Sign-In Functionality
 - Login flow is implemented
-- Database initialization is now fixed
+- Database initialization is now fixed with DB_CLOSE_DELAY=-1 for H2 persistence
 - Test users created: member_demo, trainer_demo, admin_demo (password: "password123")
-- **Action Required:** Test sign-in functionality to verify it works
+- Added detailed logging for debugging authentication
+- **Status:** Ready for testing - run the app and try logging in
 
 ### ✅ FIXED: Database Not Auto-Initialized
 - DatabaseInitializer created and integrated into MainApp
