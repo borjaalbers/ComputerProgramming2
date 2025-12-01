@@ -36,6 +36,20 @@ public class DatabaseConnection {
     }
 
     /**
+     * Resets the singleton instance. Useful for testing.
+     */
+    public static synchronized void resetInstance() {
+        if (instance != null) {
+            try {
+                instance.closeConnection();
+            } catch (Exception e) {
+                // Ignore errors when closing
+            }
+        }
+        instance = null;
+    }
+
+    /**
      * Gets a database connection. Creates a new connection if one doesn't exist
      * or if the existing connection is closed.
      *
