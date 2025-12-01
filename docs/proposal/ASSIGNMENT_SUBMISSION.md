@@ -65,13 +65,6 @@ Our team consists of 5 members with equally important roles:
    - Current Tasks: Use-case diagram, proposal documents, architecture diagrams
    - Progress: 15% complete - Project plan done, working on diagrams
 
-**My Individual Role (Borja):**
-
-As Backend Developer & Project Coordinator, I am responsible for:
-- Core backend architecture (Model and Service layers)
-- Authentication and authorization system
-- Exception handling framework
-- Team coordination and code reviews
 
 **My Assigned Tasks:**
 - ✅ Project skeleton setup (completed)
