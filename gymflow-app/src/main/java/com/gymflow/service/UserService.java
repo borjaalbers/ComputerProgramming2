@@ -1,5 +1,7 @@
 package com.gymflow.service;
 
+import com.gymflow.exception.DataAccessException;
+import com.gymflow.exception.ValidationException;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 
@@ -19,6 +21,7 @@ public interface UserService {
      * @param role the user's role
      * @return Optional containing the created User if successful, empty if username already exists
      */
-    Optional<User> createUser(String username, String password, String fullName, String email, Role role);
+    Optional<User> createUser(String username, String password, String fullName, String email, Role role) 
+        throws ValidationException, DataAccessException;
 }
 

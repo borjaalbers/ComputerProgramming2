@@ -69,9 +69,14 @@ public class WorkoutPlanFormController {
     
     private void setupMemberComboBox() {
         // Load all members
-        List<User> members = userDao.findByRole(Role.MEMBER);
-        ObservableList<User> memberList = FXCollections.observableArrayList(members);
-        memberComboBox.setItems(memberList);
+        try {
+            List<User> members = userDao.findByRole(Role.MEMBER);
+            ObservableList<User> memberList = FXCollections.observableArrayList(members);
+            memberComboBox.setItems(memberList);
+        } catch (com.gymflow.exception.DataAccessException e) {
+            System.err.println("Error loading members: " + e.getMessage());
+            memberComboBox.setItems(FXCollections.observableArrayList());
+        }
         
         // Display member names in the combo box
         memberComboBox.setConverter(new StringConverter<User>() {

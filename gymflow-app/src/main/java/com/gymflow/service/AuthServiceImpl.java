@@ -3,6 +3,8 @@ package com.gymflow.service;
 import com.gymflow.config.DatabaseConnection;
 import com.gymflow.dao.UserDao;
 import com.gymflow.dao.UserDaoImpl;
+import com.gymflow.exception.AuthenticationException;
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.User;
 import com.gymflow.security.PasswordHasher;
 
@@ -33,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
      * @return Optional containing the User if authentication succeeds, empty otherwise
      */
     @Override
-    public Optional<User> authenticate(String username, String password) {
+    public Optional<User> authenticate(String username, String password) throws AuthenticationException {
         try {
             System.out.println("Attempting authentication for user: " + username);
             
@@ -70,6 +72,10 @@ public class AuthServiceImpl implements AuthService {
             }
 
             return Optional.empty();
+        } catch (DataAccessException e) {
+            System.err.println("Database error during authentication: " + e.getMessage());
+            e.printStackTrace();
+            throw new AuthenticationException("Failed to authenticate user due to database error", e);
         } catch (Exception e) {
             System.err.println("Error during authentication: " + e.getMessage());
             e.printStackTrace();
@@ -83,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
      * @param username the username
      * @return the password hash, or null if user not found
      */
-    private String getPasswordHash(String username) {
+    private String getPasswordHash(String username) throws DataAccessException {
         String sql = "SELECT password_hash FROM users WHERE username = ?";
 
         try (Connection conn = dbConnection.getConnection();
@@ -99,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (SQLException e) {
             System.err.println("Error retrieving password hash: " + e.getMessage());
             e.printStackTrace();
+            throw new DataAccessException("Failed to retrieve password hash for user: " + username, e);
         }
 
         return null;

@@ -1,5 +1,6 @@
 package com.gymflow.service;
 
+import com.gymflow.exception.AuthenticationException;
 import com.gymflow.model.User;
 
 import java.util.Optional;
@@ -15,5 +16,5 @@ public interface AuthService {
      * @param password the plain text password
      * @return Optional containing the authenticated User if credentials are valid, empty otherwise
      */
-    Optional<User> authenticate(String username, String password);
+    Optional<User> authenticate(String username, String password) throws AuthenticationException;
 }

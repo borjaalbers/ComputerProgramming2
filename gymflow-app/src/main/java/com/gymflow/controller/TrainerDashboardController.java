@@ -33,8 +33,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import com.gymflow.exception.FileOperationException;
+import com.gymflow.exception.ValidationException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -540,8 +541,9 @@ public class TrainerDashboardController {
                 fileService.exportWorkoutTemplates(plans, file.getAbsolutePath());
                 showSuccessAlert("Export Successful", 
                     String.format("Exported %d workout plan(s) to %s", plans.size(), file.getName()));
-            } catch (IOException e) {
+            } catch (FileOperationException e) {
                 showErrorAlert("Export Error", "Failed to export workout plans: " + e.getMessage());
+                System.err.println("File operation error: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -617,13 +619,12 @@ public class TrainerDashboardController {
                 }
                 showSuccessAlert("Import Complete", message);
                 loadWorkoutPlans(); // Refresh the table
-            } catch (FileNotFoundException e) {
-                showErrorAlert("File Not Found", "The selected file could not be found");
-            } catch (IllegalArgumentException e) {
-                showErrorAlert("Invalid File", e.getMessage());
-            } catch (IOException e) {
+            } catch (FileOperationException e) {
                 showErrorAlert("Import Error", "Failed to import workout plans: " + e.getMessage());
+                System.err.println("File operation error: " + e.getMessage());
                 e.printStackTrace();
+            } catch (ValidationException e) {
+                showErrorAlert("Validation Error", e.getMessage());
             }
         }
     }

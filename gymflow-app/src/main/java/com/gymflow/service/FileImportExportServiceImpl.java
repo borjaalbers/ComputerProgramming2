@@ -1,11 +1,10 @@
 package com.gymflow.service;
 
+import com.gymflow.exception.FileOperationException;
 import com.gymflow.model.AttendanceRecord;
 import com.gymflow.model.WorkoutPlan;
 import com.gymflow.util.CsvUtil;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -16,13 +15,13 @@ import java.util.List;
 public class FileImportExportServiceImpl implements FileImportExportService {
 
     @Override
-    public boolean exportWorkoutTemplates(List<WorkoutPlan> workoutPlans, String filePath) throws IOException {
+    public boolean exportWorkoutTemplates(List<WorkoutPlan> workoutPlans, String filePath) throws FileOperationException {
         if (workoutPlans == null) {
-            throw new IllegalArgumentException("Workout plans list cannot be null");
+            throw new com.gymflow.exception.ValidationException("Workout plans list cannot be null");
         }
 
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("File path cannot be null or empty");
+            throw new com.gymflow.exception.ValidationException("File path cannot be null or empty");
         }
 
         Path path = Paths.get(filePath);
@@ -31,9 +30,9 @@ public class FileImportExportServiceImpl implements FileImportExportService {
     }
 
     @Override
-    public List<WorkoutPlan> importWorkoutTemplates(String filePath) throws IOException {
+    public List<WorkoutPlan> importWorkoutTemplates(String filePath) throws FileOperationException {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("File path cannot be null or empty");
+            throw new com.gymflow.exception.ValidationException("File path cannot be null or empty");
         }
 
         Path path = Paths.get(filePath);
@@ -42,20 +41,20 @@ public class FileImportExportServiceImpl implements FileImportExportService {
     }
 
     @Override
-    public boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath) throws IOException {
+    public boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath) throws FileOperationException {
         return exportAttendanceReport(attendanceRecords, filePath, null, null);
     }
 
     @Override
     public boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath,
                                         java.util.Map<Long, String> memberNameMap,
-                                        java.util.Map<Long, String> classNameMap) throws IOException {
+                                        java.util.Map<Long, String> classNameMap) throws FileOperationException {
         if (attendanceRecords == null) {
-            throw new IllegalArgumentException("Attendance records list cannot be null");
+            throw new com.gymflow.exception.ValidationException("Attendance records list cannot be null");
         }
 
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("File path cannot be null or empty");
+            throw new com.gymflow.exception.ValidationException("File path cannot be null or empty");
         }
 
         Path path = Paths.get(filePath);
@@ -64,9 +63,9 @@ public class FileImportExportServiceImpl implements FileImportExportService {
     }
 
     @Override
-    public void validateFile(String filePath) throws FileNotFoundException {
+    public void validateFile(String filePath) throws FileOperationException {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("File path cannot be null or empty");
+            throw new com.gymflow.exception.ValidationException("File path cannot be null or empty");
         }
 
         Path path = Paths.get(filePath);

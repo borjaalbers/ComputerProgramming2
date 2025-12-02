@@ -134,9 +134,16 @@ public class RegistrationController {
                 showErrorAlert("Registration Failed", 
                     "Failed to create account. Username may already be taken.");
             }
+        } catch (com.gymflow.exception.ValidationException e) {
+            showErrorAlert("Validation Error", e.getMessage());
+        } catch (com.gymflow.exception.DataAccessException e) {
+            showErrorAlert("Database Error", "Unable to create account due to database error. Please try again later.");
+            System.err.println("Database error during registration: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             showErrorAlert("Registration Error", 
-                "An error occurred during registration: " + e.getMessage());
+                "An unexpected error occurred during registration. Please try again.");
+            System.err.println("Unexpected error during registration: " + e.getMessage());
             e.printStackTrace();
         }
     }

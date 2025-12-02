@@ -1,5 +1,7 @@
 package com.gymflow.controller;
 
+import com.gymflow.exception.AuthenticationException;
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.security.SessionManager;
@@ -96,8 +98,12 @@ public class LoginController {
                 showErrorAlert("Login Failed", "Invalid username or password. Please try again.");
                 passwordField.clear();
             }
+        } catch (AuthenticationException e) {
+            showErrorAlert("Authentication Error", "Failed to authenticate: " + e.getMessage());
+            passwordField.clear();
         } catch (Exception e) {
-            showErrorAlert("Login Error", "An error occurred during login: " + e.getMessage());
+            showErrorAlert("Login Error", "An unexpected error occurred. Please try again.");
+            System.err.println("Unexpected error during login: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -23,9 +23,9 @@ This guide explains how to manually test all File I/O features in GymFlow.
 7. Click **"Save"**
 
 ### Expected Results:
-- ✅ **Success dialog** appears: "Exported X workout plan(s) to my_workout_plans.csv"
-- ✅ CSV file is created at the chosen location
-- ✅ Open the CSV file in Excel/Text Editor and verify it contains:
+-  **Success dialog** appears: "Exported X workout plan(s) to my_workout_plans.csv"
+-  CSV file is created at the chosen location
+-  Open the CSV file in Excel/Text Editor and verify it contains:
   - Header row: `Title,Description,Difficulty,Member ID,Trainer ID,Muscle Group,Workout Type,Duration Minutes,Equipment Needed,Target Sets,Target Reps,Rest Seconds,Created At`
   - Data rows with all workout plan information
 
@@ -48,9 +48,9 @@ This guide explains how to manually test all File I/O features in GymFlow.
 6. Click **"Open"**
 
 ### Expected Results:
-- ✅ **Success dialog** appears: "Imported X workout plan(s) successfully"
-- ✅ New workout plans appear in the table
-- ✅ All fields are correctly imported (muscle group, workout type, duration, etc.)
+-  **Success dialog** appears: "Imported X workout plan(s) successfully"
+-  New workout plans appear in the table
+-  All fields are correctly imported (muscle group, workout type, duration, etc.)
 
 ### Test with Valid CSV File:
 Create a CSV file with this content (save as `test_import.csv`):
@@ -96,9 +96,9 @@ Leg Day,Lower body workout,Beginner,1,2,2024-12-02 10:00:00
 7. Click **"Save"**
 
 ### Expected Results:
-- ✅ **Success dialog** appears: "Exported X attendance record(s) to attendance_report.csv"
-- ✅ CSV file is created at the chosen location
-- ✅ Open the CSV file and verify it contains:
+-  **Success dialog** appears: "Exported X attendance record(s) to attendance_report.csv"
+-  CSV file is created at the chosen location
+-  Open the CSV file and verify it contains:
   - Header row: `Record ID,Session ID,Class Name,Member ID,Member Name,Attended`
   - Data rows with:
     - Record ID

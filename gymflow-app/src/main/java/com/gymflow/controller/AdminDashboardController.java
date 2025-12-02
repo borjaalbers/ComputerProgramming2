@@ -32,6 +32,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import com.gymflow.exception.FileOperationException;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -144,15 +145,24 @@ public class AdminDashboardController {
 
     private void loadSystemStats() {
         // Load actual statistics from database
-        int members = userDao.countByRole(Role.MEMBER);
-        int trainers = userDao.countByRole(Role.TRAINER);
-        int upcomingClasses = classScheduleService.getUpcomingClassSessions().size();
-        int equipmentCount = equipmentService.getAllEquipment().size();
+        try {
+            int members = userDao.countByRole(Role.MEMBER);
+            int trainers = userDao.countByRole(Role.TRAINER);
+            int upcomingClasses = classScheduleService.getUpcomingClassSessions().size();
+            int equipmentCount = equipmentService.getAllEquipment().size();
 
-        totalMembersLabel.setText(String.valueOf(members));
-        totalTrainersLabel.setText(String.valueOf(trainers));
-        activeClassesLabel.setText(String.valueOf(upcomingClasses));
-        equipmentCountLabel.setText(String.valueOf(equipmentCount));
+            totalMembersLabel.setText(String.valueOf(members));
+            totalTrainersLabel.setText(String.valueOf(trainers));
+            activeClassesLabel.setText(String.valueOf(upcomingClasses));
+            equipmentCountLabel.setText(String.valueOf(equipmentCount));
+        } catch (com.gymflow.exception.DataAccessException e) {
+            System.err.println("Error loading system stats: " + e.getMessage());
+            // Set default values on error
+            totalMembersLabel.setText("0");
+            totalTrainersLabel.setText("0");
+            activeClassesLabel.setText("0");
+            equipmentCountLabel.setText("0");
+        }
     }
 
     private void loadEquipment() {
@@ -228,9 +238,14 @@ public class AdminDashboardController {
                 // Build member name map
                 for (AttendanceRecord record : allRecords) {
                     if (!memberNameMap.containsKey(record.getMemberId())) {
-                        Optional<User> member = userDao.findById(record.getMemberId());
-                        if (member.isPresent()) {
-                            memberNameMap.put(record.getMemberId(), member.get().getFullName());
+                        try {
+                            Optional<User> member = userDao.findById(record.getMemberId());
+                            if (member.isPresent()) {
+                                memberNameMap.put(record.getMemberId(), member.get().getFullName());
+                            }
+                        } catch (com.gymflow.exception.DataAccessException e) {
+                            System.err.println("Error loading member name: " + e.getMessage());
+                            memberNameMap.put(record.getMemberId(), "Unknown Member");
                         }
                     }
                     if (!classNameMap.containsKey(record.getSessionId())) {
@@ -244,8 +259,9 @@ public class AdminDashboardController {
                 fileService.exportAttendanceReport(allRecords, file.getAbsolutePath(), memberNameMap, classNameMap);
                 showSuccessAlert("Export Successful", 
                     String.format("Exported %d attendance record(s) to %s", allRecords.size(), file.getName()));
-            } catch (IOException e) {
+            } catch (FileOperationException e) {
                 showErrorAlert("Export Error", "Failed to export attendance report: " + e.getMessage());
+                System.err.println("File operation error: " + e.getMessage());
                 e.printStackTrace();
             }
         }

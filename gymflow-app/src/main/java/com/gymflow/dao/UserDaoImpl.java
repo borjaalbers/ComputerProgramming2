@@ -1,6 +1,7 @@
 package com.gymflow.dao;
 
 import com.gymflow.config.DatabaseConnection;
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.model.UserFactory;
@@ -29,7 +30,7 @@ public class UserDaoImpl implements UserDao {
      * @return Optional containing the User if found, empty otherwise
      */
     @Override
-    public Optional<User> findByUsername(String username) {
+    public Optional<User> findByUsername(String username) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
             FROM users u
@@ -57,9 +58,10 @@ public class UserDaoImpl implements UserDao {
                 }
             }
         } catch (SQLException e) {
-            // Log error (TODO: add logging framework)
             System.err.println("Error finding user by username: " + e.getMessage());
             e.printStackTrace();
+            // Wrap in DataAccessException for proper error handling
+            throw new DataAccessException("Failed to find user by username: " + username, e);
         }
 
         return Optional.empty();
@@ -72,7 +74,7 @@ public class UserDaoImpl implements UserDao {
      * @return Optional containing the User if found, empty otherwise
      */
     @Override
-    public Optional<User> findById(long id) {
+    public Optional<User> findById(long id) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
             FROM users u
@@ -103,6 +105,7 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             System.err.println("Error finding user by ID: " + e.getMessage());
             e.printStackTrace();
+            throw new DataAccessException("Failed to find user by ID: " + id, e);
         }
 
         return Optional.empty();
@@ -119,7 +122,7 @@ public class UserDaoImpl implements UserDao {
      * @return Optional containing the created User if successful, empty if username already exists
      */
     @Override
-    public Optional<User> create(String username, String passwordHash, String fullName, String email, Role role) {
+    public Optional<User> create(String username, String passwordHash, String fullName, String email, Role role) throws com.gymflow.exception.DataAccessException {
         // First check if username already exists
         if (findByUsername(username).isPresent()) {
             return Optional.empty();
@@ -144,7 +147,7 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             System.err.println("Error finding role: " + e.getMessage());
             e.printStackTrace();
-            return Optional.empty();
+            throw new DataAccessException("Failed to find role: " + role.name(), e);
         }
 
         // Insert new user
@@ -209,13 +212,12 @@ public class UserDaoImpl implements UserDao {
                     System.err.println("Error rolling back: " + rollbackEx.getMessage());
                 }
             }
+            throw new DataAccessException("Failed to create user: " + username, e);
         }
-
-        return Optional.empty();
     }
 
     @Override
-    public java.util.List<User> findByRole(Role role) {
+    public java.util.List<User> findByRole(Role role) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
             FROM users u
@@ -248,13 +250,14 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             System.err.println("Error finding users by role: " + e.getMessage());
             e.printStackTrace();
+            throw new DataAccessException("Failed to find users by role: " + role.name(), e);
         }
 
         return users;
     }
 
     @Override
-    public int countByRole(Role role) {
+    public int countByRole(Role role) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT COUNT(*) as count
             FROM users u
@@ -275,6 +278,7 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             System.err.println("Error counting users by role: " + e.getMessage());
             e.printStackTrace();
+            throw new DataAccessException("Failed to count users by role: " + role.name(), e);
         }
 
         return 0;
