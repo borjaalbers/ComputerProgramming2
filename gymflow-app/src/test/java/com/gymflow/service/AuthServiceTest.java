@@ -1,6 +1,7 @@
 package com.gymflow.service;
 
 import com.gymflow.config.DatabaseConnection;
+import com.gymflow.exception.AuthenticationException;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.security.PasswordHasher;
@@ -57,7 +58,11 @@ class AuthServiceTest {
                 )
                 """);
             
-            // Clear existing data
+            // Clear existing data (delete in order to respect foreign keys)
+            stmt.execute("DELETE FROM workout_completions");
+            stmt.execute("DELETE FROM attendance_records");
+            stmt.execute("DELETE FROM class_sessions");
+            stmt.execute("DELETE FROM workout_plans");
             stmt.execute("DELETE FROM users");
             stmt.execute("DELETE FROM roles");
             
@@ -118,7 +123,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void testAuthenticate_ValidCredentials_ReturnsUser() {
+    void testAuthenticate_ValidCredentials_ReturnsUser() throws AuthenticationException {
         Optional<User> result = authService.authenticate("member1", "member123");
         
         assertTrue(result.isPresent(), "Authentication should succeed");
@@ -128,21 +133,21 @@ class AuthServiceTest {
     }
 
     @Test
-    void testAuthenticate_InvalidPassword_ReturnsEmpty() {
+    void testAuthenticate_InvalidPassword_ReturnsEmpty() throws AuthenticationException {
         Optional<User> result = authService.authenticate("member1", "wrongpassword");
         
         assertFalse(result.isPresent(), "Authentication should fail with wrong password");
     }
 
     @Test
-    void testAuthenticate_NonExistentUser_ReturnsEmpty() {
+    void testAuthenticate_NonExistentUser_ReturnsEmpty() throws AuthenticationException {
         Optional<User> result = authService.authenticate("nonexistent", "password");
         
         assertFalse(result.isPresent(), "Authentication should fail for non-existent user");
     }
 
     @Test
-    void testAuthenticate_TrainerUser_ReturnsTrainer() {
+    void testAuthenticate_TrainerUser_ReturnsTrainer() throws AuthenticationException {
         Optional<User> result = authService.authenticate("trainer1", "trainer123");
         
         assertTrue(result.isPresent(), "Authentication should succeed");

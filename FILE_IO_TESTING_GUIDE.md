@@ -98,7 +98,8 @@ Leg Day,Lower body workout,Beginner,1,2,2024-12-02 10:00:00
 ### Expected Results:
 -  **Success dialog** appears: "Exported X attendance record(s) to attendance_report.csv"
 -  CSV file is created at the chosen location
--  Open the CSV file and verify it contains:
+- 
+ Open the CSV file and verify it contains:
   - Header row: `Record ID,Session ID,Class Name,Member ID,Member Name,Attended`
   - Data rows with:
     - Record ID

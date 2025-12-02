@@ -1,6 +1,7 @@
 package com.gymflow.dao;
 
 import com.gymflow.config.DatabaseConnection;
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.security.PasswordHasher;
@@ -57,7 +58,11 @@ class UserDaoTest {
                 )
                 """);
             
-            // Clear existing data
+            // Clear existing data (delete in order to respect foreign keys)
+            stmt.execute("DELETE FROM workout_completions");
+            stmt.execute("DELETE FROM attendance_records");
+            stmt.execute("DELETE FROM class_sessions");
+            stmt.execute("DELETE FROM workout_plans");
             stmt.execute("DELETE FROM users");
             stmt.execute("DELETE FROM roles");
             
@@ -106,7 +111,7 @@ class UserDaoTest {
     }
 
     @Test
-    void testFindByUsername_ExistingUser_ReturnsUser() {
+    void testFindByUsername_ExistingUser_ReturnsUser() throws DataAccessException {
         Optional<User> result = userDao.findByUsername("testmember");
         
         assertTrue(result.isPresent(), "User should be found");
@@ -119,14 +124,14 @@ class UserDaoTest {
     }
 
     @Test
-    void testFindByUsername_NonExistentUser_ReturnsEmpty() {
+    void testFindByUsername_NonExistentUser_ReturnsEmpty() throws DataAccessException {
         Optional<User> result = userDao.findByUsername("nonexistent");
         
         assertFalse(result.isPresent(), "User should not be found");
     }
 
     @Test
-    void testFindByUsername_CaseSensitive() {
+    void testFindByUsername_CaseSensitive() throws DataAccessException {
         Optional<User> result = userDao.findByUsername("TESTMEMBER");
         
         // Username lookup should be case-sensitive
