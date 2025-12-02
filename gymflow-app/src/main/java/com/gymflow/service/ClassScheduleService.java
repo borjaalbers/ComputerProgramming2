@@ -1,6 +1,7 @@
 package com.gymflow.service;
 
 import com.gymflow.model.ClassSession;
+import com.gymflow.exception.DataAccessException; // Import this
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,65 +13,37 @@ import java.util.Optional;
 public interface ClassScheduleService {
     /**
      * Creates a new class session.
-     *
-     * @param trainerId the trainer ID leading the class
-     * @param title the class title
-     * @param scheduleTimestamp when the class is scheduled
-     * @param capacity the maximum number of attendees
-     * @return Optional containing the created ClassSession if successful, empty otherwise
      */
-    Optional<ClassSession> createClassSession(long trainerId, String title, 
-                                             LocalDateTime scheduleTimestamp, int capacity);
+    Optional<ClassSession> createClassSession(long trainerId, String title,
+                                              LocalDateTime scheduleTimestamp, int capacity) throws DataAccessException;
 
     /**
      * Gets all class sessions for a specific trainer.
-     *
-     * @param trainerId the trainer ID
-     * @return list of class sessions for the trainer
      */
-    List<ClassSession> getClassSessionsByTrainer(long trainerId);
+    List<ClassSession> getClassSessionsByTrainer(long trainerId) throws DataAccessException;
 
     /**
      * Gets all upcoming class sessions.
-     *
-     * @return list of upcoming class sessions
      */
-    List<ClassSession> getUpcomingClassSessions();
+    List<ClassSession> getUpcomingClassSessions() throws DataAccessException;
 
     /**
      * Gets a class session by its ID.
-     *
-     * @param sessionId the class session ID
-     * @return Optional containing the ClassSession if found, empty otherwise
      */
-    Optional<ClassSession> getClassSessionById(long sessionId);
+    Optional<ClassSession> getClassSessionById(long sessionId) throws DataAccessException;
 
     /**
      * Updates an existing class session.
-     *
-     * @param sessionId the class session ID
-     * @param title the new title (can be null to keep existing)
-     * @param scheduleTimestamp the new schedule time (can be null to keep existing)
-     * @param capacity the new capacity (use -1 to keep existing)
-     * @return true if update was successful, false otherwise
      */
-    boolean updateClassSession(long sessionId, String title, LocalDateTime scheduleTimestamp, int capacity);
+    boolean updateClassSession(long sessionId, String title, LocalDateTime scheduleTimestamp, int capacity) throws DataAccessException;
 
     /**
      * Deletes a class session.
-     *
-     * @param sessionId the class session ID
-     * @return true if deletion was successful, false otherwise
      */
-    boolean deleteClassSession(long sessionId);
+    boolean deleteClassSession(long sessionId) throws DataAccessException;
 
     /**
      * Assigns a workout plan to a class session.
-     *
-     * @param sessionId the class session ID
-     * @param workoutPlanId the workout plan ID to assign (can be null to remove assignment)
-     * @return true if assignment was successful, false otherwise
      */
-    boolean assignWorkoutPlanToClass(long sessionId, Long workoutPlanId);
+    boolean assignWorkoutPlanToClass(long sessionId, Long workoutPlanId) throws DataAccessException;
 }
-
