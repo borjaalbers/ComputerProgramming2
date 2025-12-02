@@ -85,6 +85,6 @@ public interface WorkoutService {
      * @param planId the workout plan ID
      * @return true if deletion was successful, false otherwise
      */
-    boolean deleteWorkoutPlan(long planId);
+    boolean deleteWorkoutPlan(long planId) throws com.gymflow.exception.DataAccessException;
 }
 
