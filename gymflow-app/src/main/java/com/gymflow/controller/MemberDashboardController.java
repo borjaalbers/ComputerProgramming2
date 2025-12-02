@@ -562,16 +562,23 @@ public class MemberDashboardController {
                             showErrorDialog("Database error while loading workout plan: " + e.getMessage());
                         }
                     }
-                    /**
-                     * Shows an error dialog with the given message.
-                     */
-                    private void showErrorDialog(String message) {
-                        javafx.application.Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-                            alert.setHeaderText("Error");
-                            alert.showAndWait();
-                        });
-                    }
+                }
+            }
+            // ...existing code...
+        }
+        // ...existing code...
+    }
+
+    /**
+     * Shows an error dialog with the given message.
+     */
+    private void showErrorDialog(String message) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+            alert.setHeaderText("Error");
+            alert.showAndWait();
+        });
+    }
                 }
             }
             
