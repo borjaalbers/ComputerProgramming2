@@ -24,7 +24,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
@@ -523,7 +522,7 @@ public class MemberDashboardController {
         return "Unknown";
     }
 
-    private void loadWorkoutPlans() throws DataAccessException {
+    private void loadWorkoutPlans() {
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser instanceof Member) {
             // Clear the map
@@ -531,7 +530,11 @@ public class MemberDashboardController {
 
             // 1. Get direct workout plans assigned to member
             List<WorkoutPlan> directPlans = java.util.Collections.emptyList();
-            directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+            try {
+                directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+            } catch (com.gymflow.exception.DataAccessException e) {
+                showErrorDialog("Database error while loading workout plans: " + e.getMessage());
+            }
 
             // 2. Get workout plans from registered classes and track their source
             List<WorkoutPlan> classPlans = new java.util.ArrayList<>();
@@ -548,11 +551,15 @@ public class MemberDashboardController {
                     }
 
                     if (registered) {
-                        Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
-                        if (plan.isPresent()) {
-                            classPlans.add(plan.get());
-                            // Track which class this workout came from
-                            workoutToClassMap.put(plan.get().getId(), session);
+                        try {
+                            Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
+                            if (plan.isPresent()) {
+                                classPlans.add(plan.get());
+                                // Track which class this workout came from
+                                workoutToClassMap.put(plan.get().getId(), session);
+                            }
+                        } catch (com.gymflow.exception.DataAccessException e) {
+                            showErrorDialog("Database error while loading workout plan: " + e.getMessage());
                         }
                     }
                 }
@@ -602,6 +609,98 @@ public class MemberDashboardController {
             classTable.setItems(upcomingClasses);
             // Refresh the table to update cell values (especially Registered column)
             classTable.refresh();
+        }
+    }
+
+    /*
+     * --------------------------------------------------------------------------------
+     * ACTION HANDLERS
+     * --------------------------------------------------------------------------------
+     */
+
+    @FXML
+    private void handleViewDetails() {
+        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
+        if (selectedPlan == null) {
+            showErrorAlert("No Selection", "Please select a workout plan to view details.");
+            return;
+        }
+
+        StringBuilder details = new StringBuilder();
+        details.append("Title: ").append(selectedPlan.getTitle()).append("\n");
+        details.append("Difficulty: ").append(selectedPlan.getDifficulty()).append("\n");
+        details.append("Type: ").append(selectedPlan.getWorkoutType() != null ? selectedPlan.getWorkoutType() : "N/A").append("\n");
+        details.append("Muscle Group: ").append(selectedPlan.getMuscleGroup() != null ? selectedPlan.getMuscleGroup() : "N/A").append("\n");
+        details.append("Duration: ").append(selectedPlan.getDurationMinutes() != null ? selectedPlan.getDurationMinutes() + " min" : "N/A").append("\n\n");
+        details.append("Target: ").append(selectedPlan.getTargetSets()).append(" sets x ").append(selectedPlan.getTargetReps()).append(" reps").append("\n");
+        details.append("Rest: ").append(selectedPlan.getRestSeconds()).append(" sec").append("\n\n");
+        details.append("Description:\n").append(selectedPlan.getDescription()).append("\n");
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Workout Details");
+        alert.setHeaderText(selectedPlan.getTitle());
+        alert.setContentText(details.toString());
+        alert.getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        alert.showAndWait();
+    }
+
+    @FXML
+    private void handleMarkCompleted() {
+        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
+        if (selectedPlan == null) {
+            showErrorAlert("No Selection", "Please select a workout plan.");
+            return;
+        }
+
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null) return;
+
+        try {
+            boolean success = completionService.markAsCompleted(selectedPlan.getId(), currentUser.getId());
+            if (success) {
+                showSuccessAlert("Success", "Workout marked as completed!");
+                workoutTable.refresh(); // Refresh visual status
+                updateWorkoutButtonStates(selectedPlan);
+            } else {
+                showErrorAlert("Error", "Failed to mark workout as completed.");
+            }
+        } catch (Exception e) {
+            showErrorAlert("Database Error", "Error updating completion status: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleDeleteWorkout() {
+        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
+        if (selectedPlan == null) {
+            showErrorAlert("No Selection", "Please select a workout plan to delete.");
+            return;
+        }
+
+        // Prevent deletion if it's assigned via a class
+        if (workoutToClassMap.containsKey(selectedPlan.getId())) {
+            showErrorAlert("Action Not Allowed", "You cannot delete workouts assigned via Classes. You must unregister from the class instead.");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete Workout Plan");
+        confirm.setContentText("Are you sure you want to delete '" + selectedPlan.getTitle() + "'? This cannot be undone.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                boolean success = workoutService.deleteWorkoutPlan(selectedPlan.getId());
+                if (success) {
+                    showSuccessAlert("Success", "Workout plan deleted successfully.");
+                    loadWorkoutPlans(); // Reload table
+                } else {
+                    showErrorAlert("Error", "Failed to delete workout plan.");
+                }
+            } catch (Exception e) {
+                showErrorAlert("Database Error", "Error deleting workout: " + e.getMessage());
+            }
         }
     }
 
@@ -773,11 +872,9 @@ public class MemberDashboardController {
 
     private void navigateToLogin() {
         try {
-            // Assumes you have a LoginView.fxml file. Adjust the path if necessary.
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/gymflow/view/LoginView.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
             Parent root = loader.load();
 
-            // Get current stage from logout button or other element
             Stage stage = (Stage) logoutButton.getScene().getWindow();
             Scene scene = new Scene(root);
 
@@ -786,7 +883,7 @@ public class MemberDashboardController {
             stage.show();
         } catch (IOException e) {
             java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Failed to load Login View", e);
-            showErrorDialog("Could not load login screen.");
+            showErrorDialog("Could not load login screen: " + e.getMessage());
         }
     }
 }
