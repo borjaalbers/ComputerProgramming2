@@ -39,6 +39,7 @@ public class MainApp extends Application {
     public void start(Stage stage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
         Scene scene = new Scene(loader.load(), 960, 600);
+        scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
         stage.setTitle("GymFlow");
         stage.setScene(scene);
         stage.show();

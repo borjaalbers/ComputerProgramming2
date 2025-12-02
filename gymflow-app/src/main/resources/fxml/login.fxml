@@ -6,20 +6,20 @@
 
 <BorderPane prefHeight="600.0" prefWidth="960.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gymflow.controller.LoginController">
     <center>
-        <VBox alignment="CENTER" spacing="20.0" style="-fx-background-color: #ecf0f1;">
+        <VBox alignment="CENTER" spacing="20.0" styleClass="login-container">
             <children>
-                <VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <VBox alignment="CENTER" spacing="15.0" styleClass="login-card">
                     <children>
-                        <Label text="GymFlow" style="-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-                        <Label text="Fitness Management System" style="-fx-font-size: 14px; -fx-text-fill: #7f8c8d;" />
-                        <Separator prefWidth="300.0" style="-fx-padding: 10 0 10 0;" />
-                        <TextField fx:id="usernameField" promptText="Username" prefWidth="300.0" style="-fx-font-size: 14px;" />
-                        <PasswordField fx:id="passwordField" promptText="Password" prefWidth="300.0" style="-fx-font-size: 14px;" />
-                        <Button fx:id="loginButton" text="Sign In" prefWidth="300.0" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5;" />
-                        <Separator prefWidth="300.0" style="-fx-padding: 10 0 10 0;" />
+                        <Label text="GymFlow" styleClass="login-title" />
+                        <Label text="Fitness Management System" styleClass="login-subtitle" />
+                        <Separator prefWidth="300.0" styleClass="separator" />
+                        <TextField fx:id="usernameField" promptText="Username" prefWidth="300.0" styleClass="login-field" />
+                        <PasswordField fx:id="passwordField" promptText="Password" prefWidth="300.0" styleClass="login-field" />
+                        <Button fx:id="loginButton" text="Sign In" prefWidth="300.0" styleClass="login-button" />
+                        <Separator prefWidth="300.0" styleClass="separator" />
                         <HBox alignment="CENTER" spacing="10.0">
-                            <Label text="Don't have an account?" style="-fx-font-size: 12px; -fx-text-fill: #7f8c8d;" />
-                            <Button fx:id="signUpButton" text="Sign Up" style="-fx-background-color: transparent; -fx-text-fill: #3498db; -fx-font-size: 12px; -fx-font-weight: bold; -fx-underline: true; -fx-border-color: transparent; -fx-background-color: transparent;" />
+                            <Label text="Don't have an account?" styleClass="login-subtitle" />
+                            <Button fx:id="signUpButton" text="Sign Up" styleClass="signup-link" />
                         </HBox>
                     </children>
                     <padding>

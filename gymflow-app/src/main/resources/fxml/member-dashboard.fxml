@@ -5,12 +5,12 @@
 
 <BorderPane prefHeight="800.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.gymflow.controller.MemberDashboardController">
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: #2c3e50; -fx-padding: 15;">
+        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="dashboard-header dashboard-header-member">
             <children>
-                <Label text="GymFlow - Member Dashboard" style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" />
+                <Label text="GymFlow - Member Dashboard" styleClass="dashboard-title" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Label fx:id="welcomeLabel" text="Welcome, Member" style="-fx-text-fill: white; -fx-font-size: 14px;" />
-                <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
+                <Label fx:id="welcomeLabel" text="Welcome, Member" styleClass="dashboard-welcome" />
+                <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout" styleClass="logout-button" />
             </children>
         </HBox>
     </top>
@@ -19,10 +19,10 @@
         <TabPane tabClosingPolicy="UNAVAILABLE">
             <tabs>
                 <Tab text="My Workouts">
-                    <VBox spacing="15.0" style="-fx-padding: 20;">
+                    <VBox spacing="15.0" styleClass="content-container">
                         <children>
-                            <Label text="My Workout Plans" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
-                            <TableView fx:id="workoutTable" prefHeight="400.0">
+                            <Label text="My Workout Plans" styleClass="section-title" />
+                            <TableView fx:id="workoutTable" prefHeight="400.0" styleClass="table-view">
                                 <columns>
                                     <TableColumn fx:id="workoutTitleColumn" text="Title" prefWidth="150.0" />
                                     <TableColumn fx:id="workoutSourceColumn" text="Source" prefWidth="150.0" />
@@ -36,21 +36,20 @@
                                 </columns>
                             </TableView>
                             <HBox spacing="10.0">
-                                <Button fx:id="viewDetailsButton" text="View Details" onAction="#handleViewDetails" />
-                                <Button fx:id="markCompletedButton" text="Mark as Completed" onAction="#handleMarkCompleted" />
-                                <Button fx:id="deleteWorkoutButton" text="Delete" onAction="#handleDeleteWorkout" 
-                                        style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
+                                <Button fx:id="viewDetailsButton" text="View Details" onAction="#handleViewDetails" styleClass="primary-button" />
+                                <Button fx:id="markCompletedButton" text="Mark as Completed" onAction="#handleMarkCompleted" styleClass="success-button" />
+                                <Button fx:id="deleteWorkoutButton" text="Delete" onAction="#handleDeleteWorkout" styleClass="danger-button" />
                             </HBox>
                         </children>
                     </VBox>
                 </Tab>
                 
                 <Tab text="Class Schedule">
-                    <VBox spacing="15.0" style="-fx-padding: 20;">
+                    <VBox spacing="15.0" styleClass="content-container">
                         <children>
-                            <Label text="Upcoming Classes" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+                            <Label text="Upcoming Classes" styleClass="section-title" />
                             <VBox spacing="10.0">
-                                <TableView fx:id="classTable" prefHeight="400.0">
+                                <TableView fx:id="classTable" prefHeight="400.0" styleClass="table-view">
                                     <columns>
                                         <TableColumn fx:id="classNameColumn" text="Class Name" prefWidth="180.0" />
                                         <TableColumn fx:id="classTrainerColumn" text="Trainer" prefWidth="120.0" />
@@ -61,12 +60,10 @@
                                     </columns>
                                 </TableView>
                                 <Label text="💡 Tip: Click a row to select it, then click Register. Double-click a row to register quickly." 
-                                       style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d; -fx-padding: 5;" />
+                                       styleClass="info-label" style="-fx-font-size: 11px; -fx-padding: 5;" />
                                 <HBox spacing="10.0">
-                                    <Button fx:id="registerButton" text="Register for Class" onAction="#handleRegisterForClass" 
-                                            style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;" />
-                                    <Button fx:id="unregisterButton" text="Unregister from Class" onAction="#handleUnregisterFromClass" 
-                                            style="-fx-background-color: #e74c3c; -fx-text-fill: white;" />
+                                    <Button fx:id="registerButton" text="Register for Class" onAction="#handleRegisterForClass" styleClass="success-button" />
+                                    <Button fx:id="unregisterButton" text="Unregister from Class" onAction="#handleUnregisterFromClass" styleClass="danger-button" />
                                 </HBox>
                             </VBox>
                         </children>
@@ -74,15 +71,14 @@
                 </Tab>
                 
                 <Tab text="Attendance History">
-                    <VBox spacing="15.0" style="-fx-padding: 20;">
+                    <VBox spacing="15.0" styleClass="content-container">
                         <children>
                             <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                <Label text="My Attendance History" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+                                <Label text="My Attendance History" styleClass="section-title" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="refreshAttendanceButton" text="Refresh" onAction="#handleRefreshAttendance" 
-                                        style="-fx-background-color: #3498db; -fx-text-fill: white;" />
+                                <Button fx:id="refreshAttendanceButton" text="Refresh" onAction="#handleRefreshAttendance" styleClass="primary-button" />
                             </HBox>
-                            <TableView fx:id="attendanceTable" prefHeight="400.0">
+                            <TableView fx:id="attendanceTable" prefHeight="400.0" styleClass="table-view">
                                 <columns>
                                     <TableColumn fx:id="attendanceClassNameColumn" text="Class Name" prefWidth="200.0" />
                                     <TableColumn fx:id="attendanceDateTimeColumn" text="Date &amp; Time" prefWidth="180.0" />
@@ -91,36 +87,36 @@
                                 </columns>
                             </TableView>
                             <Label text="💡 This shows your complete attendance history for all classes you've registered for." 
-                                   style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d; -fx-padding: 5;" />
+                                   styleClass="info-label" style="-fx-font-size: 11px; -fx-padding: 5;" />
                         </children>
                     </VBox>
                 </Tab>
                 
                 <Tab text="My Profile">
-                    <VBox spacing="15.0" style="-fx-padding: 20;">
+                    <VBox spacing="15.0" styleClass="content-container">
                         <children>
-                            <Label text="Profile Information" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+                            <Label text="Profile Information" styleClass="section-title" />
                             <GridPane hgap="10.0" vgap="15.0">
                                 <columnConstraints>
                                     <ColumnConstraints minWidth="150.0" />
                                     <ColumnConstraints minWidth="300.0" />
                                 </columnConstraints>
                                 <children>
-                                    <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                    <Label fx:id="usernameLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="info-label" />
+                                    <Label fx:id="usernameLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="info-label" />
                                     
-                                    <Label text="Full Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                    <Label fx:id="fullNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="Full Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="info-label" />
+                                    <Label fx:id="fullNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="info-label" />
                                     
-                                    <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                    <Label fx:id="emailLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label" />
+                                    <Label fx:id="emailLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="info-label" />
                                     
-                                    <Label text="Role:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                    <Label fx:id="roleLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label text="Role:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label" />
+                                    <Label fx:id="roleLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="info-label" />
                                 </children>
                             </GridPane>
                             <HBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
-                                <Button text="Edit Profile" />
+                                <Button text="Edit Profile" styleClass="primary-button" />
                             </HBox>
                         </children>
                     </VBox>

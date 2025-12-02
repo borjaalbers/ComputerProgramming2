@@ -155,6 +155,7 @@ public class RegistrationController {
             
             Stage stage = (Stage) backToLoginButton.getScene().getWindow();
             Scene scene = new Scene(root, 960, 600);
+            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("GymFlow - Login");
             stage.centerOnScreen();
@@ -186,6 +187,7 @@ public class RegistrationController {
             
             Stage stage = (Stage) registerButton.getScene().getWindow();
             Scene scene = new Scene(root, 1200, 800);
+            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("GymFlow - " + role.name() + " Dashboard");
             stage.centerOnScreen();

@@ -13,49 +13,49 @@
             </columnConstraints>
             
             <!-- Member Selection -->
-            <Label text="Member:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-weight: bold;" />
-            <ComboBox fx:id="memberComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <Label text="Member:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <ComboBox fx:id="memberComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="combo-box" />
             
             <!-- Title -->
-            <Label text="Title:" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-weight: bold;" />
-            <TextField fx:id="titleField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label text="Title:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <TextField fx:id="titleField" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="text-field" />
             
             <!-- Description -->
-            <Label text="Description:" GridPane.columnIndex="0" GridPane.rowIndex="2" style="-fx-font-weight: bold;" />
-            <TextArea fx:id="descriptionArea" prefRowCount="3" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label text="Description:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <TextArea fx:id="descriptionArea" prefRowCount="3" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="text-area" />
             
             <!-- Difficulty -->
-            <Label text="Difficulty:" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-weight: bold;" />
-            <ComboBox fx:id="difficultyComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Label text="Difficulty:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <ComboBox fx:id="difficultyComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="combo-box" />
             
             <!-- Workout Type -->
-            <Label text="Workout Type:" GridPane.columnIndex="0" GridPane.rowIndex="4" style="-fx-font-weight: bold;" />
-            <ComboBox fx:id="workoutTypeComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+            <Label text="Workout Type:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <ComboBox fx:id="workoutTypeComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="combo-box" />
             
             <!-- Muscle Group -->
-            <Label text="Muscle Group:" GridPane.columnIndex="0" GridPane.rowIndex="5" style="-fx-font-weight: bold;" />
-            <ComboBox fx:id="muscleGroupComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <Label text="Muscle Group:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <ComboBox fx:id="muscleGroupComboBox" prefWidth="350.0" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="combo-box" />
             
             <!-- Duration -->
-            <Label text="Duration (minutes):" GridPane.columnIndex="0" GridPane.rowIndex="6" style="-fx-font-weight: bold;" />
-            <TextField fx:id="durationField" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <Label text="Duration (minutes):" GridPane.columnIndex="0" GridPane.rowIndex="6" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <TextField fx:id="durationField" GridPane.columnIndex="1" GridPane.rowIndex="6" styleClass="text-field" />
             
             <!-- Equipment Needed -->
-            <Label text="Equipment Needed:" GridPane.columnIndex="0" GridPane.rowIndex="7" style="-fx-font-weight: bold;" />
-            <TextField fx:id="equipmentField" GridPane.columnIndex="1" GridPane.rowIndex="7" promptText="e.g., Dumbbells, Barbell, Resistance Bands" />
+            <Label text="Equipment Needed:" GridPane.columnIndex="0" GridPane.rowIndex="7" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <TextField fx:id="equipmentField" GridPane.columnIndex="1" GridPane.rowIndex="7" promptText="e.g., Dumbbells, Barbell, Resistance Bands" styleClass="text-field" />
             
             <!-- Sets and Reps Row -->
-            <Label text="Target Sets:" GridPane.columnIndex="0" GridPane.rowIndex="8" style="-fx-font-weight: bold;" />
+            <Label text="Target Sets:" GridPane.columnIndex="0" GridPane.rowIndex="8" styleClass="info-label" style="-fx-font-weight: bold;" />
             <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="8">
-                <TextField fx:id="setsField" prefWidth="100.0" />
-                <Label text="Target Reps:" style="-fx-font-weight: bold;" />
-                <TextField fx:id="repsField" prefWidth="100.0" />
+                <TextField fx:id="setsField" prefWidth="100.0" styleClass="text-field" />
+                <Label text="Target Reps:" styleClass="info-label" style="-fx-font-weight: bold;" />
+                <TextField fx:id="repsField" prefWidth="100.0" styleClass="text-field" />
                 <Region HBox.hgrow="ALWAYS" />
             </HBox>
             
             <!-- Rest Time -->
-            <Label text="Rest Time (seconds):" GridPane.columnIndex="0" GridPane.rowIndex="9" style="-fx-font-weight: bold;" />
-            <TextField fx:id="restField" GridPane.columnIndex="1" GridPane.rowIndex="9" />
+            <Label text="Rest Time (seconds):" GridPane.columnIndex="0" GridPane.rowIndex="9" styleClass="info-label" style="-fx-font-weight: bold;" />
+            <TextField fx:id="restField" GridPane.columnIndex="1" GridPane.rowIndex="9" styleClass="text-field" />
         </GridPane>
     </content>
 </DialogPane>
