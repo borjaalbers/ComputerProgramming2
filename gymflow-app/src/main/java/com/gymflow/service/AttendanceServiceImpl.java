@@ -5,6 +5,7 @@ import com.gymflow.dao.AttendanceDaoImpl;
 import com.gymflow.model.AttendanceRecord;
 import com.gymflow.util.CsvUtil;
 import com.gymflow.exception.FileOperationException;
+import com.gymflow.exception.ValidationException;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -23,7 +24,6 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) {
         if (sessionId <= 0 || memberId <= 0) return Optional.empty();
-
         return attendanceDao.markAttendance(sessionId, memberId, attended);
     }
 
@@ -61,7 +61,6 @@ public class AttendanceServiceImpl implements AttendanceService {
     public Optional<AttendanceRecord> registerForClass(long sessionId, long memberId) {
         if (sessionId <= 0 || memberId <= 0) return Optional.empty();
         if (isRegisteredForClass(sessionId, memberId)) return Optional.empty();
-
         return attendanceDao.markAttendance(sessionId, memberId, false);
     }
 
@@ -94,6 +93,21 @@ public class AttendanceServiceImpl implements AttendanceService {
             CsvUtil.exportAttendanceReport(records, path);
         } catch (Exception e) {
             throw new FileOperationException("Failed to export attendance report", e);
+        }
+    }
+
+    /**
+     * Imports attendance records from a CSV file and saves them to the database.
+     *
+     * @param path the CSV file path
+     * @throws FileOperationException if file reading fails
+     * @throws ValidationException if CSV content is invalid
+     */
+    public void importAttendanceReport(Path path) throws FileOperationException, ValidationException {
+        List<AttendanceRecord> records = CsvUtil.importAttendanceReport(path);
+        for (AttendanceRecord record : records) {
+            // Save each record to the database (insert or update)
+            attendanceDao.markAttendance(record.getSessionId(), record.getMemberId(), record.isAttended());
         }
     }
 }
