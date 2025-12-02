@@ -2,11 +2,12 @@ package com.gymflow.util;
 
 import com.gymflow.model.AttendanceRecord;
 import com.gymflow.model.WorkoutPlan;
+import com.gymflow.exception.FileOperationException;
+import com.gymflow.exception.ValidationException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -18,324 +19,236 @@ import java.util.List;
  * Handles workout plan templates and attendance reports.
  */
 public final class CsvUtil {
+
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final int MAX_FILE_SIZE_MB = 10;
     private static final long MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-    private CsvUtil() {
-        // Utility class - prevent instantiation
-    }
+    private CsvUtil() { /* prevent instantiation */ }
 
+    // ==========================
+    // Export Workout Plans
+    // ==========================
     /**
      * Exports a list of workout plans to a CSV file.
      *
      * @param workoutPlans the list of workout plans to export
      * @param targetPath the path where the CSV file will be created
-     * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if the path is invalid
+     * @throws FileOperationException if an I/O error occurs
      */
-    public static void exportWorkoutTemplates(List<WorkoutPlan> workoutPlans, Path targetPath) throws IOException {
-        if (targetPath == null) {
-            throw new IllegalArgumentException("Target path cannot be null");
-        }
+    public static void exportWorkoutTemplates(List<WorkoutPlan> workoutPlans, Path targetPath) throws FileOperationException {
+        if (targetPath == null) throw new FileOperationException("Target path cannot be null");
 
-        // Ensure parent directory exists
-        Path parentDir = targetPath.getParent();
-        if (parentDir != null && !Files.exists(parentDir)) {
-            Files.createDirectories(parentDir);
-        }
+        try {
+            Path parentDir = targetPath.getParent();
+            if (parentDir != null && !Files.exists(parentDir)) Files.createDirectories(parentDir);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
-            // Write CSV header
-            writer.write("Title,Description,Difficulty,Member ID,Trainer ID,Created At");
-            writer.newLine();
-
-            // Write data rows
-            for (WorkoutPlan plan : workoutPlans) {
-                writer.write(escapeCsvField(plan.getTitle()));
-                writer.write(",");
-                writer.write(escapeCsvField(plan.getDescription()));
-                writer.write(",");
-                writer.write(escapeCsvField(plan.getDifficulty()));
-                writer.write(",");
-                writer.write(String.valueOf(plan.getMemberId()));
-                writer.write(",");
-                writer.write(String.valueOf(plan.getTrainerId()));
-                writer.write(",");
-                if (plan.getCreatedAt() != null) {
-                    writer.write(plan.getCreatedAt().format(DATE_TIME_FORMATTER));
-                }
+            try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
+                // CSV Header
+                writer.write("Title,Description,Difficulty,MuscleGroup,WorkoutType,DurationMinutes,EquipmentNeeded,TargetSets,TargetReps,RestSeconds,MemberId,TrainerId,CreatedAt");
                 writer.newLine();
+
+                // CSV Rows
+                for (WorkoutPlan plan : workoutPlans) {
+                    writer.write(
+                            escapeCsvField(plan.getTitle()) + "," +
+                                    escapeCsvField(plan.getDescription()) + "," +
+                                    escapeCsvField(plan.getDifficulty()) + "," +
+                                    escapeCsvField(plan.getMuscleGroup()) + "," +
+                                    escapeCsvField(plan.getWorkoutType()) + "," +
+                                    plan.getDurationMinutes() + "," +
+                                    escapeCsvField(plan.getEquipmentNeeded()) + "," +
+                                    plan.getTargetSets() + "," +
+                                    plan.getTargetReps() + "," +
+                                    plan.getRestSeconds() + "," +
+                                    plan.getMemberId() + "," +
+                                    plan.getTrainerId() + "," +
+                                    plan.getCreatedAt().format(DATE_TIME_FORMATTER)
+                    );
+                    writer.newLine();
+                }
             }
+        } catch (IOException e) {
+            throw new FileOperationException("Error exporting workout templates", e);
         }
     }
 
+    // ==========================
+    // Import Workout Plans
+    // ==========================
     /**
      * Imports workout plans from a CSV file.
      *
      * @param sourcePath the path to the CSV file to import
-     * @return list of imported workout plans (without IDs, as they will be generated by database)
-     * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if the file format is invalid
+     * @return list of imported WorkoutPlan objects
+     * @throws FileOperationException if file I/O fails
+     * @throws ValidationException if CSV content is invalid
      */
-    public static List<WorkoutPlan> importWorkoutTemplates(Path sourcePath) throws IOException {
+    public static List<WorkoutPlan> importWorkoutTemplates(Path sourcePath) throws FileOperationException, ValidationException {
         validateFile(sourcePath);
 
         List<WorkoutPlan> workoutPlans = new ArrayList<>();
-
         try (BufferedReader reader = Files.newBufferedReader(sourcePath)) {
             String headerLine = reader.readLine();
-            if (headerLine == null) {
-                throw new IllegalArgumentException("CSV file is empty");
-            }
+            if (headerLine == null) throw new ValidationException("CSV file is empty");
 
-            // Validate header
-            if (!headerLine.trim().equalsIgnoreCase("Title,Description,Difficulty,Member ID,Trainer ID,Created At")) {
-                throw new IllegalArgumentException("Invalid CSV header. Expected: Title,Description,Difficulty,Member ID,Trainer ID,Created At");
+            String expectedHeader = "Title,Description,Difficulty,MuscleGroup,WorkoutType,DurationMinutes,EquipmentNeeded,TargetSets,TargetReps,RestSeconds,MemberId,TrainerId,CreatedAt";
+            if (!headerLine.trim().equalsIgnoreCase(expectedHeader)) {
+                throw new ValidationException("Invalid CSV header. Expected: " + expectedHeader);
             }
 
             String line;
-            int lineNumber = 1; // Header is line 1, first data row is line 2
-
+            int lineNumber = 1;
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 line = line.trim();
-
-                // Skip empty lines
-                if (line.isEmpty()) {
-                    continue;
-                }
+                if (line.isEmpty()) continue;
 
                 try {
                     WorkoutPlan plan = parseWorkoutPlanLine(line, lineNumber);
                     workoutPlans.add(plan);
-                } catch (IllegalArgumentException e) {
+                } catch (ValidationException e) {
                     System.err.println("Skipping line " + lineNumber + ": " + e.getMessage());
-                    // Continue processing other lines
                 }
             }
+        } catch (IOException e) {
+            throw new FileOperationException("Error importing workout templates", e);
         }
 
         return workoutPlans;
     }
 
-    /**
-     * Exports attendance records to a CSV file.
-     *
-     * @param attendanceRecords the list of attendance records to export
-     * @param targetPath the path where the CSV file will be created
-     * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if the path is invalid
-     */
-    public static void exportAttendanceReport(List<AttendanceRecord> attendanceRecords, Path targetPath) throws IOException {
-        if (targetPath == null) {
-            throw new IllegalArgumentException("Target path cannot be null");
-        }
-
-        // Ensure parent directory exists
-        Path parentDir = targetPath.getParent();
-        if (parentDir != null && !Files.exists(parentDir)) {
-            Files.createDirectories(parentDir);
-        }
-
-        try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
-            // Write CSV header
-            writer.write("Record ID,Session ID,Member ID,Attended");
-            writer.newLine();
-
-            // Write data rows
-            for (AttendanceRecord record : attendanceRecords) {
-                writer.write(String.valueOf(record.getId()));
-                writer.write(",");
-                writer.write(String.valueOf(record.getSessionId()));
-                writer.write(",");
-                writer.write(String.valueOf(record.getMemberId()));
-                writer.write(",");
-                writer.write(record.isAttended() ? "Yes" : "No");
-                writer.newLine();
-            }
-        }
-    }
-
-    /**
-     * Validates a file before import.
-     *
-     * @param filePath the path to validate
-     * @throws FileNotFoundException if the file doesn't exist
-     * @throws IllegalArgumentException if the file is too large or invalid format
-     */
-    public static void validateFile(Path filePath) throws FileNotFoundException {
-        if (filePath == null) {
-            throw new IllegalArgumentException("File path cannot be null");
-        }
-
-        if (!Files.exists(filePath)) {
-            throw new FileNotFoundException("File not found: " + filePath);
-        }
-
-        if (!Files.isRegularFile(filePath)) {
-            throw new IllegalArgumentException("Path is not a regular file: " + filePath);
-        }
-
-        try {
-            long fileSize = Files.size(filePath);
-            if (fileSize > MAX_FILE_SIZE_BYTES) {
-                throw new IllegalArgumentException(
-                        String.format("File size (%d MB) exceeds maximum allowed size (%d MB)",
-                                fileSize / (1024 * 1024), MAX_FILE_SIZE_MB)
-                );
-            }
-
-            if (fileSize == 0) {
-                throw new IllegalArgumentException("File is empty");
-            }
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Cannot read file: " + e.getMessage(), e);
-        }
-
-        // Check file extension
-        String fileName = filePath.getFileName().toString().toLowerCase();
-        if (!fileName.endsWith(".csv")) {
-            throw new IllegalArgumentException("File must have .csv extension");
-        }
-    }
-
-    /**
-     * Escapes a field value for CSV format.
-     * Handles commas, quotes, and newlines in field values.
-     *
-     * @param field the field value to escape
-     * @return the escaped field value
-     */
-    private static String escapeCsvField(String field) {
-        if (field == null) {
-            return "";
-        }
-
-        // If field contains comma, quote, or newline, wrap in quotes and escape quotes
-        if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
-            return "\"" + field.replace("\"", "\"\"") + "\"";
-        }
-
-        return field;
-    }
-
-    /**
-     * Parses a single line from a workout plan CSV file.
-     *
-     * @param line the CSV line to parse
-     * @param lineNumber the line number (for error messages)
-     * @return a WorkoutPlan object (with id=0, as it will be generated by database)
-     * @throws IllegalArgumentException if the line format is invalid
-     */
-    private static WorkoutPlan parseWorkoutPlanLine(String line, int lineNumber) {
+    private static WorkoutPlan parseWorkoutPlanLine(String line, int lineNumber) throws ValidationException {
         String[] fields = parseCsvLine(line);
-
-        if (fields.length < 5) {
-            throw new IllegalArgumentException("Line has insufficient fields. Expected at least 5, got " + fields.length);
-        }
+        if (fields.length < 13) throw new ValidationException("Line " + lineNumber + " has insufficient fields (expected 13, got " + fields.length + ")");
 
         try {
             String title = unescapeCsvField(fields[0]);
-            String description = unescapeCsvField(fields.length > 1 ? fields[1] : "");
-            String difficulty = unescapeCsvField(fields.length > 2 ? fields[2] : "Beginner");
-            long memberId = Long.parseLong(fields.length > 3 ? fields[3].trim() : "0");
-            long trainerId = Long.parseLong(fields.length > 4 ? fields[4].trim() : "0");
-            LocalDateTime createdAt = null;
+            String description = unescapeCsvField(fields[1]);
+            String difficulty = unescapeCsvField(fields[2]);
+            String muscleGroup = unescapeCsvField(fields[3]);
+            String workoutType = unescapeCsvField(fields[4]);
+            int durationMinutes = Integer.parseInt(fields[5].trim());
+            String equipment = unescapeCsvField(fields[6]);
+            int sets = Integer.parseInt(fields[7].trim());
+            int reps = Integer.parseInt(fields[8].trim());
+            int rest = Integer.parseInt(fields[9].trim());
+            long memberId = Long.parseLong(fields[10].trim());
+            long trainerId = Long.parseLong(fields[11].trim());
+            LocalDateTime createdAt = LocalDateTime.now();
 
-            // Parse created date if present
-            if (fields.length > 5 && fields[5] != null && !fields[5].trim().isEmpty()) {
+            if (fields[12] != null && !fields[12].trim().isEmpty()) {
                 try {
-                    createdAt = LocalDateTime.parse(fields[5].trim(), DATE_TIME_FORMATTER);
+                    createdAt = LocalDateTime.parse(fields[12].trim(), DATE_TIME_FORMATTER);
                 } catch (DateTimeParseException e) {
-                    System.err.println("Warning: Could not parse date on line " + lineNumber + ", using current time");
-                    createdAt = LocalDateTime.now();
+                    System.err.println("Warning: invalid date on line " + lineNumber + ", using current time");
                 }
-            } else {
-                createdAt = LocalDateTime.now();
             }
 
-            // Validate required fields
-            if (title == null || title.trim().isEmpty()) {
-                throw new IllegalArgumentException("Title is required");
-            }
+            if (title == null || title.isEmpty()) throw new ValidationException("Title is required");
+            if (memberId <= 0) throw new ValidationException("Member ID must be >0");
+            if (trainerId <= 0) throw new ValidationException("Trainer ID must be >0");
 
-            if (memberId <= 0) {
-                throw new IllegalArgumentException("Member ID must be greater than 0");
-            }
-
-            if (trainerId <= 0) {
-                throw new IllegalArgumentException("Trainer ID must be greater than 0");
-            }
-
-            return new WorkoutPlan(0, memberId, trainerId, title.trim(),
-                    description != null ? description.trim() : null,
-                    difficulty != null ? difficulty.trim() : "Beginner",
-                    createdAt);
+            return new WorkoutPlan(0, memberId, trainerId, title, description, difficulty, muscleGroup, workoutType, durationMinutes, equipment, sets, reps, rest, createdAt);
 
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid number format: " + e.getMessage());
+            throw new ValidationException("Invalid number format: " + e.getMessage());
         }
     }
 
+    // ==========================
+    // Export Attendance Report
+    // ==========================
     /**
-     * Parses a CSV line, handling quoted fields.
+     * Exports a list of attendance records to a CSV file.
      *
-     * @param line the CSV line to parse
-     * @return array of field values
+     * @param attendanceRecords the list of attendance records to export
+     * @param targetPath the path to write the CSV
+     * @throws FileOperationException if file I/O fails
      */
+    public static void exportAttendanceReport(List<AttendanceRecord> attendanceRecords, Path targetPath) throws FileOperationException {
+        if (targetPath == null) throw new FileOperationException("Target path cannot be null");
+
+        try {
+            Path parentDir = targetPath.getParent();
+            if (parentDir != null && !Files.exists(parentDir)) Files.createDirectories(parentDir);
+
+            try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
+                writer.write("MemberId,SessionId,Attended");
+                writer.newLine();
+
+                for (AttendanceRecord record : attendanceRecords) {
+                    writer.write(String.format("%d,%d,%s",
+                            record.getMemberId(),
+                            record.getSessionId(),
+                            record.isAttended() ? "Completed" : "Pending"
+                    ));
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            throw new FileOperationException("Error exporting attendance report", e);
+        }
+    }
+
+    // ==========================
+    // Utilities
+    // ==========================
+    private static void validateFile(Path filePath) throws FileOperationException {
+        if (filePath == null) throw new FileOperationException("File path cannot be null");
+        if (!Files.exists(filePath)) throw new FileOperationException("File not found: " + filePath);
+        if (!Files.isRegularFile(filePath)) throw new FileOperationException("Path is not a regular file: " + filePath);
+
+        try {
+            long fileSize = Files.size(filePath);
+            if (fileSize > MAX_FILE_SIZE_BYTES) throw new FileOperationException("File exceeds max size: " + fileSize + " bytes");
+            if (fileSize == 0) throw new FileOperationException("File is empty");
+        } catch (IOException e) {
+            throw new FileOperationException("Cannot read file: " + e.getMessage(), e);
+        }
+
+        String fileName = filePath.getFileName().toString().toLowerCase();
+        if (!fileName.endsWith(".csv")) throw new FileOperationException("File must have .csv extension");
+    }
+
+    private static String escapeCsvField(String field) {
+        if (field == null) return "";
+        if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
+    }
+
     private static String[] parseCsvLine(String line) {
         List<String> fields = new ArrayList<>();
-        StringBuilder currentField = new StringBuilder();
+        StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
 
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-
             if (c == '"') {
                 if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                    // Escaped quote
-                    currentField.append('"');
-                    i++; // Skip next quote
+                    current.append('"'); i++;
                 } else {
-                    // Toggle quote state
                     inQuotes = !inQuotes;
                 }
             } else if (c == ',' && !inQuotes) {
-                // End of field
-                fields.add(currentField.toString());
-                currentField = new StringBuilder();
+                fields.add(current.toString());
+                current = new StringBuilder();
             } else {
-                currentField.append(c);
+                current.append(c);
             }
         }
-
-        // Add last field
-        fields.add(currentField.toString());
-
+        fields.add(current.toString());
         return fields.toArray(new String[0]);
     }
 
-    /**
-     * Unescapes a CSV field value.
-     *
-     * @param field the field value to unescape
-     * @return the unescaped field value
-     */
     private static String unescapeCsvField(String field) {
-        if (field == null || field.trim().isEmpty()) {
-            return null;
-        }
-
+        if (field == null || field.trim().isEmpty()) return null;
         field = field.trim();
-
-        // Remove surrounding quotes if present
         if (field.startsWith("\"") && field.endsWith("\"")) {
-            field = field.substring(1, field.length() - 1);
-            // Unescape double quotes
-            field = field.replace("\"\"", "\"");
+            field = field.substring(1, field.length() - 1).replace("\"\"", "\"");
         }
-
         return field.isEmpty() ? null : field;
     }
 }
