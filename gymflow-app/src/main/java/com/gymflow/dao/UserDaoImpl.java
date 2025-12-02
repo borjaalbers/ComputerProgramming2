@@ -283,5 +283,124 @@ public class UserDaoImpl implements UserDao {
 
         return 0;
     }
+
+    @Override
+    public java.util.List<User> findAll() throws DataAccessException {
+        String sql = """
+            SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            ORDER BY u.full_name ASC
+            """;
+
+        java.util.List<User> users = new java.util.ArrayList<>();
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long id = rs.getLong("id");
+                    String username = rs.getString("username");
+                    String fullName = rs.getString("full_name");
+                    String email = rs.getString("email");
+                    LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
+                    String roleName = rs.getString("role_name");
+
+                    Role userRole = Role.fromString(roleName);
+                    User user = UserFactory.createUser(userRole, id, username, fullName, email, createdAt);
+                    users.add(user);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding all users: " + e.getMessage());
+            e.printStackTrace();
+            throw new DataAccessException("Failed to find all users", e);
+        }
+
+        return users;
+    }
+
+    @Override
+    public boolean update(long id, String fullName, String email, Role role) throws DataAccessException {
+        // Build dynamic update query based on what's provided
+        java.util.List<String> updates = new java.util.ArrayList<>();
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            updates.add("full_name = ?");
+            params.add(fullName.trim());
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            updates.add("email = ?");
+            params.add(email.trim());
+        }
+        if (role != null) {
+            // Get role_id from database
+            String roleIdSql = "SELECT id FROM roles WHERE name = ?";
+            int roleId = -1;
+            try (Connection conn = dbConnection.getConnection();
+                 PreparedStatement roleStmt = conn.prepareStatement(roleIdSql)) {
+                roleStmt.setString(1, role.name());
+                try (ResultSet rs = roleStmt.executeQuery()) {
+                    if (rs.next()) {
+                        roleId = rs.getInt("id");
+                    } else {
+                        throw new DataAccessException("Role not found: " + role.name());
+                    }
+                }
+            } catch (SQLException e) {
+                throw new DataAccessException("Failed to find role: " + role.name(), e);
+            }
+            updates.add("role_id = ?");
+            params.add(roleId);
+        }
+
+        if (updates.isEmpty()) {
+            return false; // Nothing to update
+        }
+
+        String sql = "UPDATE users SET " + String.join(", ", updates) + " WHERE id = ?";
+        params.add(id);
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof String) {
+                    stmt.setString(i + 1, (String) param);
+                } else if (param instanceof Integer) {
+                    stmt.setInt(i + 1, (Integer) param);
+                } else if (param instanceof Long) {
+                    stmt.setLong(i + 1, (Long) param);
+                }
+            }
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating user: " + e.getMessage());
+            e.printStackTrace();
+            throw new DataAccessException("Failed to update user: " + id, e);
+        }
+    }
+
+    @Override
+    public boolean delete(long id) throws DataAccessException {
+        String sql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting user: " + e.getMessage());
+            e.printStackTrace();
+            throw new DataAccessException("Failed to delete user: " + id, e);
+        }
+    }
 }
 

@@ -61,5 +61,43 @@ public class UserServiceImpl implements UserService {
             throw e; // Re-throw to let controller handle it
         }
     }
+
+    @Override
+    public java.util.List<User> getAllUsers() throws DataAccessException {
+        try {
+            return userDao.findAll();
+        } catch (DataAccessException e) {
+            System.err.println("Database error getting all users: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean updateUser(long id, String fullName, String email, Role role) 
+        throws ValidationException, DataAccessException {
+        // Validate email format if provided
+        if (email != null && !email.trim().isEmpty()) {
+            if (!email.contains("@") || !email.contains(".")) {
+                throw new ValidationException("Invalid email format");
+            }
+        }
+
+        try {
+            return userDao.update(id, fullName, email, role);
+        } catch (DataAccessException e) {
+            System.err.println("Database error updating user: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean deleteUser(long id) throws DataAccessException {
+        try {
+            return userDao.delete(id);
+        } catch (DataAccessException e) {
+            System.err.println("Database error deleting user: " + e.getMessage());
+            throw e;
+        }
+    }
 }
 

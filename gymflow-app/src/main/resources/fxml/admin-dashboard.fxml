@@ -24,18 +24,17 @@
                             <HBox alignment="CENTER_LEFT" spacing="10.0">
                                 <Label text="System Users" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button text="Add New User" />
-                                <Button text="Import Users" />
-                                <Button text="Export Users" />
+                                <Button fx:id="addUserButton" text="Add New User" onAction="#handleAddUser" />
+                                <Button fx:id="refreshUsersButton" text="Refresh" onAction="#handleRefreshUsers" />
                             </HBox>
-                            <TableView fx:id="userTable" prefHeight="400.0">
+                            <TableView fx:id="userTable" prefHeight="500.0">
                                 <columns>
-                                    <TableColumn text="Username" prefWidth="150.0" />
-                                    <TableColumn text="Full Name" prefWidth="200.0" />
-                                    <TableColumn text="Email" prefWidth="200.0" />
-                                    <TableColumn text="Role" prefWidth="100.0" />
-                                    <TableColumn text="Created" prefWidth="150.0" />
-                                    <TableColumn text="Actions" prefWidth="200.0" />
+                                    <TableColumn fx:id="usernameColumn" text="Username" prefWidth="150.0" />
+                                    <TableColumn fx:id="fullNameColumn" text="Full Name" prefWidth="200.0" />
+                                    <TableColumn fx:id="emailColumn" text="Email" prefWidth="200.0" />
+                                    <TableColumn fx:id="roleColumn" text="Role" prefWidth="100.0" />
+                                    <TableColumn fx:id="createdColumn" text="Created" prefWidth="150.0" />
+                                    <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="200.0" />
                                 </columns>
                             </TableView>
                         </children>

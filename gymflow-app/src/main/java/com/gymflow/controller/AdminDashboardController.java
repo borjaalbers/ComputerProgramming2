@@ -15,22 +15,36 @@ import com.gymflow.service.EquipmentService;
 import com.gymflow.service.EquipmentServiceImpl;
 import com.gymflow.service.FileImportExportService;
 import com.gymflow.service.FileImportExportServiceImpl;
+import com.gymflow.service.UserService;
+import com.gymflow.service.UserServiceImpl;
+import com.gymflow.exception.ValidationException;
+import com.gymflow.exception.DataAccessException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.TextField;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ComboBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Insets;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import java.time.format.DateTimeFormatter;
 
 import com.gymflow.exception.FileOperationException;
 import java.io.File;
@@ -87,18 +101,48 @@ public class AdminDashboardController {
     @FXML
     private TableColumn<Equipment, String> equipmentLastServiceColumn;
 
+    @FXML
+    private TableView<User> userTable;
+
+    @FXML
+    private TableColumn<User, String> usernameColumn;
+
+    @FXML
+    private TableColumn<User, String> fullNameColumn;
+
+    @FXML
+    private TableColumn<User, String> emailColumn;
+
+    @FXML
+    private TableColumn<User, String> roleColumn;
+
+    @FXML
+    private TableColumn<User, String> createdColumn;
+
+    @FXML
+    private TableColumn<User, String> actionsColumn;
+
+    @FXML
+    private Button addUserButton;
+
+    @FXML
+    private Button refreshUsersButton;
+
     private final SessionManager sessionManager;
     private final UserDao userDao;
+    private final UserService userService;
     private final ClassScheduleService classScheduleService;
     private final EquipmentService equipmentService;
     private final AttendanceService attendanceService;
     private final FileImportExportService fileService;
 
     private ObservableList<Equipment> equipmentList;
+    private ObservableList<User> userList;
 
     public AdminDashboardController() {
         this.sessionManager = SessionManager.getInstance();
         this.userDao = new UserDaoImpl();
+        this.userService = new UserServiceImpl();
         this.classScheduleService = new ClassScheduleServiceImpl();
         this.equipmentService = new EquipmentServiceImpl();
         this.attendanceService = new AttendanceServiceImpl();
@@ -109,8 +153,10 @@ public class AdminDashboardController {
     private void initialize() {
         loadUserInfo();
         setupEquipmentTable();
+        setupUserTable();
         loadSystemStats();
         loadEquipment();
+        loadUsers();
         logoutButton.setOnAction(event -> handleLogout());
     }
 
@@ -170,6 +216,272 @@ public class AdminDashboardController {
             equipmentService.getAllEquipment()
         );
         equipmentTable.setItems(equipmentList);
+    }
+
+    private void setupUserTable() {
+        usernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+        fullNameColumn.setCellValueFactory(new PropertyValueFactory<>("fullName"));
+        emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
+        roleColumn.setCellValueFactory(cellData -> {
+            User user = cellData.getValue();
+            if (user != null) {
+                return new javafx.beans.property.SimpleStringProperty(user.getRole().name());
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
+        createdColumn.setCellValueFactory(cellData -> {
+            User user = cellData.getValue();
+            if (user != null && user.getCreatedAt() != null) {
+                String formatted = user.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                return new javafx.beans.property.SimpleStringProperty(formatted);
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
+
+        // Actions column with Edit and Delete buttons
+        actionsColumn.setCellFactory(column -> new javafx.scene.control.TableCell<User, String>() {
+            private final Button editButton = new Button("Edit");
+            private final Button deleteButton = new Button("Delete");
+
+            {
+                editButton.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 5 10;");
+                deleteButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 5 10;");
+                
+                editButton.setOnAction(event -> {
+                    User user = getTableView().getItems().get(getIndex());
+                    handleEditUser(user);
+                });
+                
+                deleteButton.setOnAction(event -> {
+                    User user = getTableView().getItems().get(getIndex());
+                    handleDeleteUser(user);
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    User user = getTableView().getItems().get(getIndex());
+                    // Prevent deleting yourself
+                    User currentUser = sessionManager.getCurrentUser();
+                    boolean isCurrentUser = currentUser != null && currentUser.getId() == user.getId();
+                    
+                    deleteButton.setDisable(isCurrentUser);
+                    if (isCurrentUser) {
+                        deleteButton.setTooltip(new javafx.scene.control.Tooltip("Cannot delete your own account"));
+                    }
+                    
+                    HBox hbox = new HBox(5);
+                    hbox.getChildren().addAll(editButton, deleteButton);
+                    setGraphic(hbox);
+                }
+            }
+        });
+
+        // Enable row selection
+        userTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.SINGLE);
+    }
+
+    private void loadUsers() {
+        try {
+            userList = FXCollections.observableArrayList(userService.getAllUsers());
+            userTable.setItems(userList);
+        } catch (DataAccessException e) {
+            showErrorAlert("Error", "Failed to load users: " + e.getMessage());
+            System.err.println("Error loading users: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleAddUser() {
+        // Create a dialog for adding a new user
+        Dialog<User> dialog = new Dialog<>();
+        dialog.setTitle("Add New User");
+        dialog.setHeaderText("Enter user information");
+
+        // Set button types
+        ButtonType createButtonType = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        // Create form fields
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+        TextField fullNameField = new TextField();
+        fullNameField.setPromptText("Full Name");
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+        ComboBox<Role> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll(Role.values());
+        roleComboBox.setValue(Role.MEMBER);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Username:"), 0, 0);
+        grid.add(usernameField, 1, 0);
+        grid.add(new Label("Password:"), 0, 1);
+        grid.add(passwordField, 1, 1);
+        grid.add(new Label("Full Name:"), 0, 2);
+        grid.add(fullNameField, 1, 2);
+        grid.add(new Label("Email:"), 0, 3);
+        grid.add(emailField, 1, 3);
+        grid.add(new Label("Role:"), 0, 4);
+        grid.add(roleComboBox, 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on username field
+        Platform.runLater(() -> usernameField.requestFocus());
+
+        // Convert result to User when create button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                try {
+                    Optional<User> created = userService.createUser(
+                        usernameField.getText(),
+                        passwordField.getText(),
+                        fullNameField.getText(),
+                        emailField.getText(),
+                        roleComboBox.getValue()
+                    );
+                    return created.orElse(null);
+                } catch (ValidationException | DataAccessException e) {
+                    showErrorAlert("Error", e.getMessage());
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        Optional<User> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() != null) {
+            showSuccessAlert("Success", "User created successfully!");
+            loadUsers();
+            loadSystemStats(); // Refresh statistics
+        } else if (result.isPresent() && result.get() == null) {
+            // User creation failed (likely duplicate username)
+            showErrorAlert("Error", "Failed to create user. Username may already exist.");
+        }
+    }
+
+    @FXML
+    private void handleRefreshUsers() {
+        loadUsers();
+        showSuccessAlert("Refresh", "User list refreshed");
+    }
+
+    private void handleEditUser(User user) {
+        if (user == null) {
+            return;
+        }
+
+        // Create a dialog for editing user
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Edit User");
+        dialog.setHeaderText("Edit user information for: " + user.getUsername());
+
+        // Set button types
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Create form fields (username cannot be changed)
+        TextField fullNameField = new TextField(user.getFullName());
+        fullNameField.setPromptText("Full Name");
+        TextField emailField = new TextField(user.getEmail());
+        emailField.setPromptText("Email");
+        ComboBox<Role> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll(Role.values());
+        roleComboBox.setValue(user.getRole());
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Username:"), 0, 0);
+        grid.add(new Label(user.getUsername() + " (cannot be changed)"), 1, 0);
+        grid.add(new Label("Full Name:"), 0, 1);
+        grid.add(fullNameField, 1, 1);
+        grid.add(new Label("Email:"), 0, 2);
+        grid.add(emailField, 1, 2);
+        grid.add(new Label("Role:"), 0, 3);
+        grid.add(roleComboBox, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on full name field
+        Platform.runLater(() -> fullNameField.requestFocus());
+
+        // Convert result when save button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                try {
+                    boolean success = userService.updateUser(
+                        user.getId(),
+                        fullNameField.getText(),
+                        emailField.getText(),
+                        roleComboBox.getValue()
+                    );
+                    return success;
+                } catch (ValidationException | DataAccessException e) {
+                    showErrorAlert("Error", e.getMessage());
+                    return false;
+                }
+            }
+            return false;
+        });
+
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.isPresent() && result.get()) {
+            showSuccessAlert("Success", "User updated successfully!");
+            loadUsers();
+            loadSystemStats(); // Refresh statistics
+        }
+    }
+
+    private void handleDeleteUser(User user) {
+        if (user == null) {
+            return;
+        }
+
+        // Prevent deleting yourself
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser != null && currentUser.getId() == user.getId()) {
+            showErrorAlert("Error", "You cannot delete your own account");
+            return;
+        }
+
+        // Confirm deletion
+        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmDialog.setTitle("Confirm Deletion");
+        confirmDialog.setHeaderText("Delete User");
+        confirmDialog.setContentText("Are you sure you want to delete user '" + user.getUsername() + "' (" + user.getFullName() + ")?\n\nThis action cannot be undone.");
+
+        Optional<ButtonType> result = confirmDialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                boolean success = userService.deleteUser(user.getId());
+                if (success) {
+                    showSuccessAlert("Success", "User deleted successfully!");
+                    loadUsers();
+                    loadSystemStats(); // Refresh statistics
+                } else {
+                    showErrorAlert("Error", "Failed to delete user");
+                }
+            } catch (DataAccessException e) {
+                showErrorAlert("Error", "Failed to delete user: " + e.getMessage());
+                System.err.println("Error deleting user: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
     @FXML

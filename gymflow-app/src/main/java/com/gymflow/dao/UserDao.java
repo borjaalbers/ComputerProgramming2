@@ -52,4 +52,33 @@ public interface UserDao {
      * @throws DataAccessException if database operation fails
      */
     int countByRole(Role role) throws DataAccessException;
+    
+    /**
+     * Gets all users from the database.
+     *
+     * @return list of all users
+     * @throws DataAccessException if database operation fails
+     */
+    java.util.List<User> findAll() throws DataAccessException;
+    
+    /**
+     * Updates a user's information.
+     *
+     * @param id the user ID
+     * @param fullName the new full name (can be null to keep existing)
+     * @param email the new email (can be null to keep existing)
+     * @param role the new role (can be null to keep existing)
+     * @return true if update was successful
+     * @throws DataAccessException if database operation fails
+     */
+    boolean update(long id, String fullName, String email, Role role) throws DataAccessException;
+    
+    /**
+     * Deletes a user from the database.
+     *
+     * @param id the user ID to delete
+     * @return true if deletion was successful
+     * @throws DataAccessException if database operation fails
+     */
+    boolean delete(long id) throws DataAccessException;
 }
