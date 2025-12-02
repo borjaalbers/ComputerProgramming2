@@ -122,6 +122,24 @@ public class MemberDashboardController {
     @FXML
     private javafx.scene.control.Button unregisterButton;
 
+    @FXML
+    private TableView<java.util.Map<String, Object>> attendanceTable;
+
+    @FXML
+    private TableColumn<java.util.Map<String, Object>, String> attendanceClassNameColumn;
+
+    @FXML
+    private TableColumn<java.util.Map<String, Object>, String> attendanceDateTimeColumn;
+
+    @FXML
+    private TableColumn<java.util.Map<String, Object>, String> attendanceTrainerColumn;
+
+    @FXML
+    private TableColumn<java.util.Map<String, Object>, String> attendanceStatusColumn;
+
+    @FXML
+    private Button refreshAttendanceButton;
+
     private final SessionManager sessionManager;
     private final WorkoutService workoutService;
     private final ClassScheduleService classScheduleService;
@@ -130,6 +148,7 @@ public class MemberDashboardController {
 
     private ObservableList<WorkoutPlan> workoutPlans;
     private ObservableList<ClassSession> upcomingClasses;
+    private ObservableList<java.util.Map<String, Object>> attendanceHistory;
     // Map to track which class each workout came from
     private java.util.Map<Long, ClassSession> workoutToClassMap;
 
@@ -152,8 +171,10 @@ public class MemberDashboardController {
             loadUserInfo();
             setupWorkoutTable();
             setupClassTable();
+            setupAttendanceTable();
             loadUpcomingClasses(); // Load classes first
             loadWorkoutPlans(); // Then load workout plans (which uses upcomingClasses)
+            loadAttendanceHistory(); // Load attendance history
             if (logoutButton != null) {
                 logoutButton.setOnAction(event -> handleLogout());
             }
@@ -453,6 +474,81 @@ public class MemberDashboardController {
         // Initialize button states
         updateButtonStates(null);
     }
+
+    /**
+     * Sets up the attendance history table columns.
+     */
+    private void setupAttendanceTable() {
+        if (attendanceTable == null || attendanceClassNameColumn == null || 
+            attendanceDateTimeColumn == null || attendanceTrainerColumn == null ||
+            attendanceStatusColumn == null) {
+            System.err.println("Warning: Some attendance table columns are null");
+            return;
+        }
+
+        // Class Name column
+        attendanceClassNameColumn.setCellValueFactory(cellData -> {
+            java.util.Map<String, Object> record = cellData.getValue();
+            if (record != null && record.containsKey("className")) {
+                return new javafx.beans.property.SimpleStringProperty(
+                    record.get("className").toString()
+                );
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+
+        // Date & Time column
+        attendanceDateTimeColumn.setCellValueFactory(cellData -> {
+            java.util.Map<String, Object> record = cellData.getValue();
+            if (record != null && record.containsKey("dateTime")) {
+                return new javafx.beans.property.SimpleStringProperty(
+                    record.get("dateTime").toString()
+                );
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+
+        // Trainer column
+        attendanceTrainerColumn.setCellValueFactory(cellData -> {
+            java.util.Map<String, Object> record = cellData.getValue();
+            if (record != null && record.containsKey("trainerName")) {
+                return new javafx.beans.property.SimpleStringProperty(
+                    record.get("trainerName").toString()
+                );
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
+
+        // Attended status column with styling
+        attendanceStatusColumn.setCellValueFactory(cellData -> {
+            java.util.Map<String, Object> record = cellData.getValue();
+            if (record != null && record.containsKey("attended")) {
+                boolean attended = (Boolean) record.get("attended");
+                return new javafx.beans.property.SimpleStringProperty(
+                    attended ? "Yes" : "No"
+                );
+            }
+            return new javafx.beans.property.SimpleStringProperty("No");
+        });
+
+        // Custom cell factory for status column to add color styling
+        attendanceStatusColumn.setCellFactory(column -> new javafx.scene.control.TableCell<java.util.Map<String, Object>, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? "" : item);
+                if (item != null) {
+                    if (item.equals("Yes")) {
+                        setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                    } else {
+                        setStyle("-fx-text-fill: #e74c3c;");
+                    }
+                } else {
+                    setStyle("");
+                }
+            }
+        });
+    }
     
     /**
      * Updates the enabled state of register/unregister buttons based on selection.
@@ -586,6 +682,120 @@ public class MemberDashboardController {
         }
     }
 
+    /**
+     * Loads attendance history for the current member.
+     * Retrieves all completed workouts from workout_completions table and enriches them with workout plan and class information.
+     * This ensures the attendance history matches the completed workouts shown in the workout plans table.
+     */
+    private void loadAttendanceHistory() {
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || !(currentUser instanceof Member)) {
+            attendanceHistory = FXCollections.observableArrayList();
+            if (attendanceTable != null) {
+                attendanceTable.setItems(attendanceHistory);
+            }
+            return;
+        }
+
+        // Get all workout completions for this member (this is the source of truth for completed workouts)
+        List<com.gymflow.model.WorkoutCompletion> completions = completionService.getCompletionsByMember(currentUser.getId());
+        
+        // Convert to display format with workout plan and class information
+        List<java.util.Map<String, Object>> historyData = new java.util.ArrayList<>();
+        
+        for (com.gymflow.model.WorkoutCompletion completion : completions) {
+            java.util.Map<String, Object> historyItem = new java.util.HashMap<>();
+            
+            // Get workout plan details
+            Optional<WorkoutPlan> workoutPlanOpt = workoutService.getWorkoutPlanById(completion.getWorkoutPlanId());
+            if (workoutPlanOpt.isEmpty()) {
+                // Skip if workout plan not found (might have been deleted)
+                continue;
+            }
+            
+            WorkoutPlan workoutPlan = workoutPlanOpt.get();
+            
+            // Check if this completion is from a class or direct assignment
+            if (completion.getClassSessionId() != null) {
+                // From a class - get class session details
+                Optional<ClassSession> classSessionOpt = classScheduleService.getClassSessionById(completion.getClassSessionId());
+                if (classSessionOpt.isPresent()) {
+                    ClassSession classSession = classSessionOpt.get();
+                    historyItem.put("className", classSession.getTitle());
+                    
+                    // Format class date and time
+                    if (classSession.getScheduleTimestamp() != null) {
+                        String dateTime = classSession.getScheduleTimestamp().format(
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                        );
+                        historyItem.put("dateTime", dateTime);
+                    } else {
+                        // Fallback to completion date if class date not available
+                        if (completion.getCompletedAt() != null) {
+                            historyItem.put("dateTime", completion.getCompletedAt().format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                            ));
+                        } else {
+                            historyItem.put("dateTime", "N/A");
+                        }
+                    }
+                    
+                    // Get trainer name from class session
+                    String trainerName = getTrainerName(classSession.getTrainerId());
+                    historyItem.put("trainerName", trainerName);
+                } else {
+                    // Class session not found (might have been deleted)
+                    historyItem.put("className", workoutPlan.getTitle() + " (Class Deleted)");
+                    if (completion.getCompletedAt() != null) {
+                        historyItem.put("dateTime", completion.getCompletedAt().format(
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                        ));
+                    } else {
+                        historyItem.put("dateTime", "N/A");
+                    }
+                    historyItem.put("trainerName", "N/A");
+                }
+            } else {
+                // Direct assignment - show workout plan title as "class name"
+                historyItem.put("className", workoutPlan.getTitle());
+                
+                // Use completion date/time
+                if (completion.getCompletedAt() != null) {
+                    historyItem.put("dateTime", completion.getCompletedAt().format(
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                    ));
+                } else {
+                    historyItem.put("dateTime", "N/A");
+                }
+                
+                // Get trainer name from workout plan
+                String trainerName = getTrainerName(workoutPlan.getTrainerId());
+                historyItem.put("trainerName", trainerName);
+            }
+            
+            // All completed workouts show as "attended" (Yes)
+            historyItem.put("attended", true);
+            
+            historyData.add(historyItem);
+        }
+        
+        // Sort by completion date/time (most recent first)
+        historyData.sort((a, b) -> {
+            String dateA = a.get("dateTime").toString();
+            String dateB = b.get("dateTime").toString();
+            // If date is "N/A", put it at the end
+            if (dateA.equals("N/A")) return 1;
+            if (dateB.equals("N/A")) return -1;
+            return dateB.compareTo(dateA); // Reverse order (newest first)
+        });
+        
+        attendanceHistory = FXCollections.observableArrayList(historyData);
+        if (attendanceTable != null) {
+            attendanceTable.setItems(attendanceHistory);
+            attendanceTable.refresh();
+        }
+    }
+
     @FXML
     private void handleRegisterForClass() {
         ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
@@ -624,6 +834,8 @@ public class MemberDashboardController {
             refreshClassTable();
             // Also refresh workout plans in case this class has a workout plan
             loadWorkoutPlans();
+            // Refresh attendance history
+            loadAttendanceHistory();
         } else {
             showErrorAlert("Error", "Failed to register for class. Please try again.");
         }
@@ -699,6 +911,8 @@ public class MemberDashboardController {
                 refreshClassTable(); // Refresh the table
                 // Also refresh workout plans
                 loadWorkoutPlans();
+                // Refresh attendance history
+                loadAttendanceHistory();
             } else {
                 showErrorAlert("Error", "Failed to unregister from class");
             }
@@ -823,9 +1037,25 @@ public class MemberDashboardController {
             return;
         }
 
-        // Get source class if applicable
+        // Get source class if applicable - first check the map, then query database for all classes
         ClassSession sourceClass = workoutToClassMap.get(selectedPlan.getId());
         Long classSessionId = sourceClass != null ? sourceClass.getId() : null;
+        
+        // If not found in map (e.g., class has passed), query database to find class sessions with this workout plan
+        if (classSessionId == null) {
+            // Check all attendance records to find which class has this workout plan
+            List<com.gymflow.model.AttendanceRecord> memberRecords = attendanceService.getAttendanceForMember(currentUser.getId());
+            for (com.gymflow.model.AttendanceRecord record : memberRecords) {
+                Optional<ClassSession> sessionOpt = classScheduleService.getClassSessionById(record.getSessionId());
+                if (sessionOpt.isPresent()) {
+                    ClassSession session = sessionOpt.get();
+                    if (session.getWorkoutPlanId() != null && session.getWorkoutPlanId().equals(selectedPlan.getId())) {
+                        classSessionId = session.getId();
+                        break;
+                    }
+                }
+            }
+        }
 
         // Optional notes dialog
         TextInputDialog notesDialog = new TextInputDialog();
@@ -842,8 +1072,28 @@ public class MemberDashboardController {
         );
 
         if (result.isPresent()) {
+            // Get the classSessionId from the completion record (it might have been found during creation)
+            Long finalClassSessionId = result.get().getClassSessionId();
+            
+            // If we still don't have a classSessionId, try to get it from the completion record
+            if (finalClassSessionId == null && classSessionId != null) {
+                finalClassSessionId = classSessionId;
+            }
+            
+            // If this workout is from a class, also mark attendance as "attended"
+            if (finalClassSessionId != null) {
+                Optional<com.gymflow.model.AttendanceRecord> attendanceResult = 
+                    attendanceService.markAttendance(finalClassSessionId, currentUser.getId(), true);
+                if (attendanceResult.isPresent()) {
+                    System.out.println("Attendance marked as 'attended' for class session " + finalClassSessionId);
+                } else {
+                    System.err.println("Warning: Could not update attendance record for class session " + finalClassSessionId);
+                }
+            }
+            
             showSuccessAlert("Success", "Workout plan marked as completed!");
             loadWorkoutPlans(); // Refresh to update status
+            loadAttendanceHistory(); // Refresh attendance history to show updated status
         } else {
             showErrorAlert("Error", "Failed to mark workout as completed");
         }
@@ -875,5 +1125,35 @@ public class MemberDashboardController {
         // But we can show information about it
         showErrorAlert("Cannot Remove", "Workout plans are created by trainers and cannot be deleted by members. " +
                       "If you no longer need this workout plan, please contact your trainer to have it removed.");
+    }
+
+    /**
+     * Handles the refresh button click for attendance history.
+     * Refreshes both attendance history and workout plans to check for any changes.
+     */
+    @FXML
+    private void handleRefreshAttendance() {
+        User currentUser = sessionManager.getCurrentUser();
+        if (currentUser == null || !(currentUser instanceof Member)) {
+            showErrorAlert("Error", "No member logged in");
+            return;
+        }
+
+        try {
+            // Refresh workout plans to check for new ones
+            loadWorkoutPlans();
+            
+            // Refresh attendance history to check for status changes
+            loadAttendanceHistory();
+            
+            // Also refresh upcoming classes in case new classes were added
+            loadUpcomingClasses();
+            
+            showSuccessAlert("Refresh Complete", "Attendance history and workout plans have been refreshed.");
+        } catch (Exception e) {
+            showErrorAlert("Refresh Error", "An error occurred while refreshing: " + e.getMessage());
+            System.err.println("Error refreshing attendance history: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
