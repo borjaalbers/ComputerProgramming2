@@ -371,9 +371,14 @@ public class MemberDashboardController {
                     User currentUser = sessionManager.getCurrentUser();
                     if (session != null && currentUser != null && currentUser instanceof Member) {
                         // Always check current registration status from database
-                        boolean isRegistered = attendanceService.isRegisteredForClass(
-                            session.getId(), currentUser.getId()
-                        );
+                        boolean isRegistered = false;
+                        try {
+                            isRegistered = attendanceService.isRegisteredForClass(
+                                session.getId(), currentUser.getId()
+                            );
+                        } catch (com.gymflow.exception.DataAccessException e) {
+                            showErrorDialog("Database error while checking registration status: " + e.getMessage());
+                        }
                         setText(isRegistered ? "Yes" : "No");
                         // Visual feedback - green for registered, gray for not registered
                         if (isRegistered) {
@@ -472,10 +477,14 @@ public class MemberDashboardController {
             return;
         }
         
-        boolean isRegistered = attendanceService.isRegisteredForClass(
-            selectedSession.getId(), currentUser.getId()
-        );
-        
+        boolean isRegistered = false;
+        try {
+            isRegistered = attendanceService.isRegisteredForClass(
+                selectedSession.getId(), currentUser.getId()
+            );
+        } catch (com.gymflow.exception.DataAccessException e) {
+            showErrorDialog("Database error while checking registration status: " + e.getMessage());
+        }
         if (registerButton != null) {
             registerButton.setDisable(isRegistered);
         }
@@ -522,20 +531,47 @@ public class MemberDashboardController {
             workoutToClassMap.clear();
             
             // Get direct workout plans assigned to member
-            List<WorkoutPlan> directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+            List<WorkoutPlan> directPlans = java.util.Collections.emptyList();
+            try {
+                directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+            } catch (com.gymflow.exception.DataAccessException e) {
+                showErrorDialog("Database error while loading workout plans: " + e.getMessage());
+            }
             
             // Get workout plans from registered classes and track their source
             List<WorkoutPlan> classPlans = new java.util.ArrayList<>();
             if (upcomingClasses != null) {
                 for (ClassSession session : upcomingClasses) {
-                    if (session != null && session.getWorkoutPlanId() != null && 
-                        attendanceService.isRegisteredForClass(session.getId(), currentUser.getId())) {
-                        Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
-                        if (plan.isPresent()) {
-                            classPlans.add(plan.get());
-                            // Track which class this workout came from
-                            workoutToClassMap.put(plan.get().getId(), session);
+                    boolean registered = false;
+                    try {
+                        if (session != null && session.getWorkoutPlanId() != null && 
+                            attendanceService.isRegisteredForClass(session.getId(), currentUser.getId())) {
+                            registered = true;
                         }
+                    } catch (com.gymflow.exception.DataAccessException e) {
+                        showErrorDialog("Database error while checking class registration: " + e.getMessage());
+                    }
+                    if (registered) {
+                        try {
+                            Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
+                            if (plan.isPresent()) {
+                                classPlans.add(plan.get());
+                                // Track which class this workout came from
+                                workoutToClassMap.put(plan.get().getId(), session);
+                            }
+                        } catch (com.gymflow.exception.DataAccessException e) {
+                            showErrorDialog("Database error while loading workout plan: " + e.getMessage());
+                        }
+                    }
+                    /**
+                     * Shows an error dialog with the given message.
+                     */
+                    private void showErrorDialog(String message) {
+                        javafx.application.Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+                            alert.setHeaderText("Error");
+                            alert.showAndWait();
+                        });
                     }
                 }
             }
