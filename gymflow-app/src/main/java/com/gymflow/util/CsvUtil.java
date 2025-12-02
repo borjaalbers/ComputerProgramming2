@@ -181,8 +181,8 @@ public final class CsvUtil {
             long fileSize = Files.size(filePath);
             if (fileSize > MAX_FILE_SIZE_BYTES) {
                 throw new IllegalArgumentException(
-                    String.format("File size (%d MB) exceeds maximum allowed size (%d MB)",
-                        fileSize / (1024 * 1024), MAX_FILE_SIZE_MB)
+                        String.format("File size (%d MB) exceeds maximum allowed size (%d MB)",
+                                fileSize / (1024 * 1024), MAX_FILE_SIZE_MB)
                 );
             }
 
@@ -268,10 +268,10 @@ public final class CsvUtil {
                 throw new IllegalArgumentException("Trainer ID must be greater than 0");
             }
 
-            return new WorkoutPlan(0, memberId, trainerId, title.trim(), 
-                                 description != null ? description.trim() : null,
-                                 difficulty != null ? difficulty.trim() : "Beginner",
-                                 createdAt);
+            return new WorkoutPlan(0, memberId, trainerId, title.trim(),
+                    description != null ? description.trim() : null,
+                    difficulty != null ? difficulty.trim() : "Beginner",
+                    createdAt);
 
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid number format: " + e.getMessage());
