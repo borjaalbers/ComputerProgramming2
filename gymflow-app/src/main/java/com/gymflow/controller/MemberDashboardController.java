@@ -159,8 +159,7 @@ public class MemberDashboardController {
                 logoutButton.setOnAction(event -> handleLogout());
             }
         } catch (Exception e) {
-            System.err.println("Error initializing MemberDashboardController: " + e.getMessage());
-            e.printStackTrace();
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Error initializing MemberDashboardController", e);
             // Show error to user
             javafx.application.Platform.runLater(() -> {
                 showErrorAlert("Initialization Error", "Failed to initialize dashboard: " + e.getMessage());
@@ -185,7 +184,7 @@ public class MemberDashboardController {
             workoutDurationColumn == null || workoutSetsRepsColumn == null ||
             workoutCreatedColumn == null || workoutSourceColumn == null ||
             workoutStatusColumn == null) {
-            System.err.println("Warning: Some workout table columns are null");
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).warning("Some workout table columns are null");
             return;
         }
         
@@ -250,7 +249,7 @@ public class MemberDashboardController {
         workoutStatusColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             User currentUser = sessionManager.getCurrentUser();
-            if (plan != null && currentUser != null && currentUser instanceof Member) {
+            if (plan != null && currentUser instanceof Member) {
                 boolean completed = completionService.isCompleted(plan.getId(), currentUser.getId());
                 javafx.beans.property.SimpleStringProperty prop = new javafx.beans.property.SimpleStringProperty(
                     completed ? "✓ Completed" : "Pending"
@@ -329,7 +328,7 @@ public class MemberDashboardController {
         if (classTable == null || classNameColumn == null || classTrainerColumn == null ||
             classDateTimeColumn == null || classCapacityColumn == null ||
             classRegisteredColumn == null || classWorkoutPlanColumn == null) {
-            System.err.println("Warning: Some class table columns are null");
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).warning("Some class table columns are null");
             return;
         }
         
@@ -369,7 +368,7 @@ public class MemberDashboardController {
                 } else {
                     ClassSession session = getTableRow().getItem();
                     User currentUser = sessionManager.getCurrentUser();
-                    if (session != null && currentUser != null && currentUser instanceof Member) {
+                    if (session != null && currentUser instanceof Member) {
                         // Always check current registration status from database
                         boolean isRegistered = false;
                         try {
@@ -504,7 +503,7 @@ public class MemberDashboardController {
                 return trainer.get().getFullName();
             }
         } catch (Exception e) {
-            System.err.println("Error getting trainer name: " + e.getMessage());
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Error getting trainer name", e);
         }
         return "Trainer";
     }
@@ -519,7 +518,7 @@ public class MemberDashboardController {
                 return plan.get().getTitle();
             }
         } catch (Exception e) {
-            System.err.println("Error getting workout plan title: " + e.getMessage());
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Error getting workout plan title", e);
         }
         return "Unknown";
     }
@@ -748,7 +747,7 @@ public class MemberDashboardController {
             navigateToLogin();
         } catch (Exception e) {
             showErrorAlert("Logout Error", "An error occurred during logout: " + e.getMessage());
-            e.printStackTrace();
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Exception during logout", e);
         }
     }
 
@@ -764,7 +763,7 @@ public class MemberDashboardController {
             stage.centerOnScreen();
         } catch (IOException e) {
             showErrorAlert("Navigation Error", "Failed to load login screen: " + e.getMessage());
-            e.printStackTrace();
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Exception during navigation to login", e);
         }
     }
 
