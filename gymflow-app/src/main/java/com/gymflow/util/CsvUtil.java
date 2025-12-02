@@ -29,13 +29,6 @@ public final class CsvUtil {
     // ==========================
     // Export Workout Plans
     // ==========================
-    /**
-     * Exports a list of workout plans to a CSV file.
-     *
-     * @param workoutPlans the list of workout plans to export
-     * @param targetPath the path where the CSV file will be created
-     * @throws FileOperationException if an I/O error occurs
-     */
     public static void exportWorkoutTemplates(List<WorkoutPlan> workoutPlans, Path targetPath) throws FileOperationException {
         if (targetPath == null) throw new FileOperationException("Target path cannot be null");
 
@@ -44,11 +37,9 @@ public final class CsvUtil {
             if (parentDir != null && !Files.exists(parentDir)) Files.createDirectories(parentDir);
 
             try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
-                // CSV Header
                 writer.write("Title,Description,Difficulty,MuscleGroup,WorkoutType,DurationMinutes,EquipmentNeeded,TargetSets,TargetReps,RestSeconds,MemberId,TrainerId,CreatedAt");
                 writer.newLine();
 
-                // CSV Rows
                 for (WorkoutPlan plan : workoutPlans) {
                     writer.write(
                             escapeCsvField(plan.getTitle()) + "," +
@@ -76,14 +67,6 @@ public final class CsvUtil {
     // ==========================
     // Import Workout Plans
     // ==========================
-    /**
-     * Imports workout plans from a CSV file.
-     *
-     * @param sourcePath the path to the CSV file to import
-     * @return list of imported WorkoutPlan objects
-     * @throws FileOperationException if file I/O fails
-     * @throws ValidationException if CSV content is invalid
-     */
     public static List<WorkoutPlan> importWorkoutTemplates(Path sourcePath) throws FileOperationException, ValidationException {
         validateFile(sourcePath);
 
@@ -159,13 +142,6 @@ public final class CsvUtil {
     // ==========================
     // Export Attendance Report
     // ==========================
-    /**
-     * Exports a list of attendance records to a CSV file.
-     *
-     * @param attendanceRecords the list of attendance records to export
-     * @param targetPath the path to write the CSV
-     * @throws FileOperationException if file I/O fails
-     */
     public static void exportAttendanceReport(List<AttendanceRecord> attendanceRecords, Path targetPath) throws FileOperationException {
         if (targetPath == null) throw new FileOperationException("Target path cannot be null");
 
@@ -189,6 +165,56 @@ public final class CsvUtil {
         } catch (IOException e) {
             throw new FileOperationException("Error exporting attendance report", e);
         }
+    }
+
+    // ==========================
+    // Import Attendance Report
+    // ==========================
+    public static List<AttendanceRecord> importAttendanceReport(Path sourcePath) throws FileOperationException, ValidationException {
+        validateFile(sourcePath);
+
+        List<AttendanceRecord> attendanceRecords = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(sourcePath)) {
+            String headerLine = reader.readLine();
+            if (headerLine == null) throw new ValidationException("CSV file is empty");
+
+            String expectedHeader = "MemberId,SessionId,Attended";
+            if (!headerLine.trim().equalsIgnoreCase(expectedHeader)) {
+                throw new ValidationException("Invalid CSV header. Expected: " + expectedHeader);
+            }
+
+            String line;
+            int lineNumber = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                String[] fields = parseCsvLine(line);
+                if (fields.length < 3) {
+                    System.err.println("Skipping line " + lineNumber + ": insufficient fields");
+                    continue;
+                }
+
+                try {
+                    long memberId = Long.parseLong(fields[0].trim());
+                    long sessionId = Long.parseLong(fields[1].trim());
+                    boolean attended = "Completed".equalsIgnoreCase(fields[2].trim());
+
+                    if (memberId <= 0 || sessionId <= 0) {
+                        throw new ValidationException("MemberId and SessionId must be >0");
+                    }
+
+                    attendanceRecords.add(new AttendanceRecord(0, sessionId, memberId, attended));
+                } catch (NumberFormatException e) {
+                    System.err.println("Skipping line " + lineNumber + ": invalid number format");
+                }
+            }
+        } catch (IOException e) {
+            throw new FileOperationException("Error importing attendance report", e);
+        }
+
+        return attendanceRecords;
     }
 
     // ==========================
