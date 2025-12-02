@@ -22,6 +22,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -207,8 +208,40 @@ public class AdminDashboardController {
         File file = fileChooser.showSaveDialog(stage);
 
         if (file != null) {
+            // Check for file overwrite
+            if (file.exists()) {
+                Alert overwriteAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                overwriteAlert.setTitle("File Exists");
+                overwriteAlert.setHeaderText("File already exists");
+                overwriteAlert.setContentText("The file " + file.getName() + " already exists. Do you want to overwrite it?");
+                Optional<ButtonType> result = overwriteAlert.showAndWait();
+                if (result.isEmpty() || result.get() != ButtonType.OK) {
+                    return; // User cancelled
+                }
+            }
+
             try {
-                fileService.exportAttendanceReport(allRecords, file.getAbsolutePath());
+                // Enrich data with member and class names
+                java.util.Map<Long, String> memberNameMap = new java.util.HashMap<>();
+                java.util.Map<Long, String> classNameMap = new java.util.HashMap<>();
+
+                // Build member name map
+                for (AttendanceRecord record : allRecords) {
+                    if (!memberNameMap.containsKey(record.getMemberId())) {
+                        Optional<User> member = userDao.findById(record.getMemberId());
+                        if (member.isPresent()) {
+                            memberNameMap.put(record.getMemberId(), member.get().getFullName());
+                        }
+                    }
+                    if (!classNameMap.containsKey(record.getSessionId())) {
+                        Optional<com.gymflow.model.ClassSession> session = classScheduleService.getClassSessionById(record.getSessionId());
+                        if (session.isPresent()) {
+                            classNameMap.put(record.getSessionId(), session.get().getTitle());
+                        }
+                    }
+                }
+
+                fileService.exportAttendanceReport(allRecords, file.getAbsolutePath(), memberNameMap, classNameMap);
                 showSuccessAlert("Export Successful", 
                     String.format("Exported %d attendance record(s) to %s", allRecords.size(), file.getName()));
             } catch (IOException e) {

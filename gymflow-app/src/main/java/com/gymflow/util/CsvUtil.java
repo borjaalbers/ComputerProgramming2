@@ -46,8 +46,8 @@ public final class CsvUtil {
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
-            // Write CSV header
-            writer.write("Title,Description,Difficulty,Member ID,Trainer ID,Created At");
+            // Write CSV header with all fields
+            writer.write("Title,Description,Difficulty,Member ID,Trainer ID,Muscle Group,Workout Type,Duration Minutes,Equipment Needed,Target Sets,Target Reps,Rest Seconds,Created At");
             writer.newLine();
 
             // Write data rows
@@ -61,6 +61,20 @@ public final class CsvUtil {
                 writer.write(String.valueOf(plan.getMemberId()));
                 writer.write(",");
                 writer.write(String.valueOf(plan.getTrainerId()));
+                writer.write(",");
+                writer.write(escapeCsvField(plan.getMuscleGroup()));
+                writer.write(",");
+                writer.write(escapeCsvField(plan.getWorkoutType()));
+                writer.write(",");
+                writer.write(plan.getDurationMinutes() != null ? String.valueOf(plan.getDurationMinutes()) : "");
+                writer.write(",");
+                writer.write(escapeCsvField(plan.getEquipmentNeeded()));
+                writer.write(",");
+                writer.write(plan.getTargetSets() != null ? String.valueOf(plan.getTargetSets()) : "");
+                writer.write(",");
+                writer.write(plan.getTargetReps() != null ? String.valueOf(plan.getTargetReps()) : "");
+                writer.write(",");
+                writer.write(plan.getRestSeconds() != null ? String.valueOf(plan.getRestSeconds()) : "");
                 writer.write(",");
                 if (plan.getCreatedAt() != null) {
                     writer.write(plan.getCreatedAt().format(DATE_TIME_FORMATTER));
@@ -89,9 +103,15 @@ public final class CsvUtil {
                 throw new IllegalArgumentException("CSV file is empty");
             }
 
-            // Validate header
-            if (!headerLine.trim().equalsIgnoreCase("Title,Description,Difficulty,Member ID,Trainer ID,Created At")) {
-                throw new IllegalArgumentException("Invalid CSV header. Expected: Title,Description,Difficulty,Member ID,Trainer ID,Created At");
+            // Validate header - support both old and new formats for backward compatibility
+            String expectedOldHeader = "Title,Description,Difficulty,Member ID,Trainer ID,Created At";
+            String expectedNewHeader = "Title,Description,Difficulty,Member ID,Trainer ID,Muscle Group,Workout Type,Duration Minutes,Equipment Needed,Target Sets,Target Reps,Rest Seconds,Created At";
+            String trimmedHeader = headerLine.trim();
+            boolean isOldFormat = trimmedHeader.equalsIgnoreCase(expectedOldHeader);
+            boolean isNewFormat = trimmedHeader.equalsIgnoreCase(expectedNewHeader);
+            
+            if (!isOldFormat && !isNewFormat) {
+                throw new IllegalArgumentException("Invalid CSV header. Expected format with fields: Title,Description,Difficulty,Member ID,Trainer ID,Muscle Group,Workout Type,Duration Minutes,Equipment Needed,Target Sets,Target Reps,Rest Seconds,Created At");
             }
 
             String line;
@@ -107,7 +127,7 @@ public final class CsvUtil {
                 }
 
                 try {
-                    WorkoutPlan plan = parseWorkoutPlanLine(line, lineNumber);
+                    WorkoutPlan plan = parseWorkoutPlanLine(line, lineNumber, isNewFormat);
                     workoutPlans.add(plan);
                 } catch (IllegalArgumentException e) {
                     System.err.println("Skipping line " + lineNumber + ": " + e.getMessage());
@@ -128,6 +148,22 @@ public final class CsvUtil {
      * @throws IllegalArgumentException if the path is invalid
      */
     public static void exportAttendanceReport(List<AttendanceRecord> attendanceRecords, Path targetPath) throws IOException {
+        exportAttendanceReport(attendanceRecords, targetPath, null, null);
+    }
+
+    /**
+     * Exports attendance records to a CSV file with member and class names.
+     *
+     * @param attendanceRecords the list of attendance records to export
+     * @param targetPath the path where the CSV file will be created
+     * @param memberNameMap optional map of member ID to member name (can be null)
+     * @param classNameMap optional map of session ID to class name (can be null)
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if the path is invalid
+     */
+    public static void exportAttendanceReport(List<AttendanceRecord> attendanceRecords, Path targetPath,
+                                             java.util.Map<Long, String> memberNameMap,
+                                             java.util.Map<Long, String> classNameMap) throws IOException {
         if (targetPath == null) {
             throw new IllegalArgumentException("Target path cannot be null");
         }
@@ -139,8 +175,12 @@ public final class CsvUtil {
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(targetPath)) {
-            // Write CSV header
-            writer.write("Record ID,Session ID,Member ID,Attended");
+            // Write CSV header with names if maps are provided
+            if (memberNameMap != null && classNameMap != null) {
+                writer.write("Record ID,Session ID,Class Name,Member ID,Member Name,Attended");
+            } else {
+                writer.write("Record ID,Session ID,Member ID,Attended");
+            }
             writer.newLine();
 
             // Write data rows
@@ -148,8 +188,24 @@ public final class CsvUtil {
                 writer.write(String.valueOf(record.getId()));
                 writer.write(",");
                 writer.write(String.valueOf(record.getSessionId()));
+                
+                if (memberNameMap != null && classNameMap != null) {
+                    // Include class name
+                    String className = classNameMap.getOrDefault(record.getSessionId(), "Unknown Class");
+                    writer.write(",");
+                    writer.write(escapeCsvField(className));
+                }
+                
                 writer.write(",");
                 writer.write(String.valueOf(record.getMemberId()));
+                
+                if (memberNameMap != null && classNameMap != null) {
+                    // Include member name
+                    String memberName = memberNameMap.getOrDefault(record.getMemberId(), "Unknown Member");
+                    writer.write(",");
+                    writer.write(escapeCsvField(memberName));
+                }
+                
                 writer.write(",");
                 writer.write(record.isAttended() ? "Yes" : "No");
                 writer.newLine();
@@ -225,14 +281,16 @@ public final class CsvUtil {
      *
      * @param line the CSV line to parse
      * @param lineNumber the line number (for error messages)
+     * @param isNewFormat whether the CSV uses the new format with all fields
      * @return a WorkoutPlan object (with id=0, as it will be generated by database)
      * @throws IllegalArgumentException if the line format is invalid
      */
-    private static WorkoutPlan parseWorkoutPlanLine(String line, int lineNumber) {
+    private static WorkoutPlan parseWorkoutPlanLine(String line, int lineNumber, boolean isNewFormat) {
         String[] fields = parseCsvLine(line);
 
-        if (fields.length < 5) {
-            throw new IllegalArgumentException("Line has insufficient fields. Expected at least 5, got " + fields.length);
+        int minFields = isNewFormat ? 13 : 5;
+        if (fields.length < minFields) {
+            throw new IllegalArgumentException("Line has insufficient fields. Expected at least " + minFields + ", got " + fields.length);
         }
 
         try {
@@ -241,12 +299,33 @@ public final class CsvUtil {
             String difficulty = unescapeCsvField(fields.length > 2 ? fields[2] : "Beginner");
             long memberId = Long.parseLong(fields.length > 3 ? fields[3].trim() : "0");
             long trainerId = Long.parseLong(fields.length > 4 ? fields[4].trim() : "0");
+            
+            // New fields (only in new format)
+            String muscleGroup = null;
+            String workoutType = null;
+            Integer durationMinutes = null;
+            String equipmentNeeded = null;
+            Integer targetSets = null;
+            Integer targetReps = null;
+            Integer restSeconds = null;
+            
+            if (isNewFormat && fields.length >= 13) {
+                muscleGroup = unescapeCsvField(fields[5]);
+                workoutType = unescapeCsvField(fields[6]);
+                durationMinutes = parseInteger(fields[7]);
+                equipmentNeeded = unescapeCsvField(fields[8]);
+                targetSets = parseInteger(fields[9]);
+                targetReps = parseInteger(fields[10]);
+                restSeconds = parseInteger(fields[11]);
+            }
+            
             LocalDateTime createdAt = null;
+            int dateFieldIndex = isNewFormat ? 12 : 5;
 
             // Parse created date if present
-            if (fields.length > 5 && fields[5] != null && !fields[5].trim().isEmpty()) {
+            if (fields.length > dateFieldIndex && fields[dateFieldIndex] != null && !fields[dateFieldIndex].trim().isEmpty()) {
                 try {
-                    createdAt = LocalDateTime.parse(fields[5].trim(), DATE_TIME_FORMATTER);
+                    createdAt = LocalDateTime.parse(fields[dateFieldIndex].trim(), DATE_TIME_FORMATTER);
                 } catch (DateTimeParseException e) {
                     System.err.println("Warning: Could not parse date on line " + lineNumber + ", using current time");
                     createdAt = LocalDateTime.now();
@@ -268,13 +347,35 @@ public final class CsvUtil {
                 throw new IllegalArgumentException("Trainer ID must be greater than 0");
             }
 
+            // Create WorkoutPlan with all fields
             return new WorkoutPlan(0, memberId, trainerId, title.trim(), 
                                  description != null ? description.trim() : null,
                                  difficulty != null ? difficulty.trim() : "Beginner",
+                                 muscleGroup != null && !muscleGroup.isEmpty() ? muscleGroup.trim() : null,
+                                 workoutType != null && !workoutType.isEmpty() ? workoutType.trim() : null,
+                                 durationMinutes,
+                                 equipmentNeeded != null && !equipmentNeeded.isEmpty() ? equipmentNeeded.trim() : null,
+                                 targetSets,
+                                 targetReps,
+                                 restSeconds,
                                  createdAt);
 
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid number format: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Parses an integer from a string, returning null if empty or invalid.
+     */
+    private static Integer parseInteger(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

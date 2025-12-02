@@ -45,6 +45,20 @@ public interface FileImportExportService {
     boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath) throws IOException;
 
     /**
+     * Exports attendance records to a CSV file with member and class names.
+     *
+     * @param attendanceRecords the list of attendance records to export
+     * @param filePath the path where the CSV file will be created
+     * @param memberNameMap optional map of member ID to member name (can be null)
+     * @param classNameMap optional map of session ID to class name (can be null)
+     * @return true if export was successful, false otherwise
+     * @throws IOException if an I/O error occurs
+     */
+    boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath,
+                                   java.util.Map<Long, String> memberNameMap,
+                                   java.util.Map<Long, String> classNameMap) throws IOException;
+
+    /**
      * Validates a file before import.
      *
      * @param filePath the path to validate

@@ -524,6 +524,18 @@ public class TrainerDashboardController {
         File file = fileChooser.showSaveDialog(stage);
 
         if (file != null) {
+            // Check for file overwrite
+            if (file.exists()) {
+                Alert overwriteAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                overwriteAlert.setTitle("File Exists");
+                overwriteAlert.setHeaderText("File already exists");
+                overwriteAlert.setContentText("The file " + file.getName() + " already exists. Do you want to overwrite it?");
+                Optional<ButtonType> result = overwriteAlert.showAndWait();
+                if (result.isEmpty() || result.get() != ButtonType.OK) {
+                    return; // User cancelled
+                }
+            }
+
             try {
                 fileService.exportWorkoutTemplates(plans, file.getAbsolutePath());
                 showSuccessAlert("Export Successful", 
@@ -565,12 +577,29 @@ public class TrainerDashboardController {
                 // Import each plan (they will have id=0, so they'll be created as new)
                 int successCount = 0;
                 int failCount = 0;
+                int duplicateCount = 0;
 
                 for (WorkoutPlan plan : importedPlans) {
+                    // Check for duplicates (same title, member, trainer)
+                    List<WorkoutPlan> existing = workoutService.getWorkoutPlansByTrainer(currentUser.getId());
+                    boolean isDuplicate = existing.stream().anyMatch(existingPlan ->
+                        existingPlan.getTitle().equalsIgnoreCase(plan.getTitle()) &&
+                        existingPlan.getMemberId() == plan.getMemberId()
+                    );
+
+                    if (isDuplicate) {
+                        duplicateCount++;
+                        continue; // Skip duplicates
+                    }
+
                     // Use the current trainer's ID for all imported plans
+                    // Use the new createWorkoutPlan method with all fields
                     Optional<WorkoutPlan> created = workoutService.createWorkoutPlan(
                         plan.getMemberId(), currentUser.getId(), plan.getTitle(),
-                        plan.getDescription(), plan.getDifficulty()
+                        plan.getDescription(), plan.getDifficulty(),
+                        plan.getMuscleGroup(), plan.getWorkoutType(),
+                        plan.getDurationMinutes(), plan.getEquipmentNeeded(),
+                        plan.getTargetSets(), plan.getTargetReps(), plan.getRestSeconds()
                     );
                     if (created.isPresent()) {
                         successCount++;
@@ -580,6 +609,9 @@ public class TrainerDashboardController {
                 }
 
                 String message = String.format("Imported %d workout plan(s) successfully", successCount);
+                if (duplicateCount > 0) {
+                    message += String.format(", %d duplicate(s) skipped", duplicateCount);
+                }
                 if (failCount > 0) {
                     message += String.format(", %d failed", failCount);
                 }

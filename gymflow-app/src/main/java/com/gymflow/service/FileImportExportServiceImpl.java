@@ -43,6 +43,13 @@ public class FileImportExportServiceImpl implements FileImportExportService {
 
     @Override
     public boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath) throws IOException {
+        return exportAttendanceReport(attendanceRecords, filePath, null, null);
+    }
+
+    @Override
+    public boolean exportAttendanceReport(List<AttendanceRecord> attendanceRecords, String filePath,
+                                        java.util.Map<Long, String> memberNameMap,
+                                        java.util.Map<Long, String> classNameMap) throws IOException {
         if (attendanceRecords == null) {
             throw new IllegalArgumentException("Attendance records list cannot be null");
         }
@@ -52,7 +59,7 @@ public class FileImportExportServiceImpl implements FileImportExportService {
         }
 
         Path path = Paths.get(filePath);
-        CsvUtil.exportAttendanceReport(attendanceRecords, path);
+        CsvUtil.exportAttendanceReport(attendanceRecords, path, memberNameMap, classNameMap);
         return true;
     }
 
