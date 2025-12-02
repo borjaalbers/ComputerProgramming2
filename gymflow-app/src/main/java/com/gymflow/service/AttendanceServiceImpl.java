@@ -3,7 +3,10 @@ package com.gymflow.service;
 import com.gymflow.dao.AttendanceDao;
 import com.gymflow.dao.AttendanceDaoImpl;
 import com.gymflow.model.AttendanceRecord;
+import com.gymflow.util.CsvUtil;
+import com.gymflow.exception.FileOperationException;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,59 +22,32 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) {
-        // Validation
-        if (sessionId <= 0 || memberId <= 0) {
-            System.err.println("Invalid session or member ID");
-            return Optional.empty();
-        }
+        if (sessionId <= 0 || memberId <= 0) return Optional.empty();
 
-        // Use DAO's markAttendance which handles create/update automatically
-        Optional<AttendanceRecord> result = attendanceDao.markAttendance(sessionId, memberId, attended);
-        
-        if (result.isPresent()) {
-            System.out.println("Attendance marked: Member " + memberId + " - Session " + sessionId + " - Attended: " + attended);
-        } else {
-            System.err.println("Failed to mark attendance for member " + memberId + " in session " + sessionId);
-        }
-
-        return result;
+        return attendanceDao.markAttendance(sessionId, memberId, attended);
     }
 
     @Override
     public List<AttendanceRecord> getAttendanceForSession(long sessionId) {
-        if (sessionId <= 0) {
-            System.err.println("Invalid session ID");
-            return List.of();
-        }
-
+        if (sessionId <= 0) return List.of();
         return attendanceDao.findBySessionId(sessionId);
     }
 
     @Override
     public List<AttendanceRecord> getAttendanceForMember(long memberId) {
-        if (memberId <= 0) {
-            System.err.println("Invalid member ID");
-            return List.of();
-        }
-
+        if (memberId <= 0) return List.of();
         return attendanceDao.findByMemberId(memberId);
     }
 
     @Override
     public Optional<AttendanceRecord> getAttendanceRecordById(long recordId) {
-        if (recordId <= 0) {
-            return Optional.empty();
-        }
-
+        if (recordId <= 0) return Optional.empty();
         return attendanceDao.findById(recordId);
     }
 
     @Override
     public int getAttendanceCount(long sessionId) {
-        List<AttendanceRecord> records = getAttendanceForSession(sessionId);
-        
-        // Count only records where attended is true
-        return (int) records.stream()
+        return (int) getAttendanceForSession(sessionId).stream()
                 .filter(AttendanceRecord::isAttended)
                 .count();
     }
@@ -83,62 +59,41 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Optional<AttendanceRecord> registerForClass(long sessionId, long memberId) {
-        // Validation
-        if (sessionId <= 0 || memberId <= 0) {
-            System.err.println("Invalid session or member ID");
-            return Optional.empty();
-        }
+        if (sessionId <= 0 || memberId <= 0) return Optional.empty();
+        if (isRegisteredForClass(sessionId, memberId)) return Optional.empty();
 
-        // Check if already registered
-        if (isRegisteredForClass(sessionId, memberId)) {
-            System.err.println("Member " + memberId + " is already registered for session " + sessionId);
-            return Optional.empty();
-        }
-
-        // Register (create attendance record with attended=false)
-        Optional<AttendanceRecord> result = markAttendance(sessionId, memberId, false);
-        
-        if (result.isPresent()) {
-            System.out.println("Member " + memberId + " registered for session " + sessionId);
-        } else {
-            System.err.println("Failed to register member " + memberId + " for session " + sessionId);
-        }
-
-        return result;
+        return attendanceDao.markAttendance(sessionId, memberId, false);
     }
 
     @Override
     public boolean unregisterFromClass(long sessionId, long memberId) {
-        // Validation
-        if (sessionId <= 0 || memberId <= 0) {
-            System.err.println("Invalid session or member ID");
-            return false;
-        }
-
-        boolean success = attendanceDao.delete(sessionId, memberId);
-        
-        if (success) {
-            System.out.println("Member " + memberId + " unregistered from session " + sessionId);
-        } else {
-            System.err.println("Failed to unregister member " + memberId + " from session " + sessionId);
-        }
-
-        return success;
+        if (sessionId <= 0 || memberId <= 0) return false;
+        return attendanceDao.delete(sessionId, memberId);
     }
 
     @Override
     public boolean isRegisteredForClass(long sessionId, long memberId) {
-        if (sessionId <= 0 || memberId <= 0) {
-            return false;
-        }
-
+        if (sessionId <= 0 || memberId <= 0) return false;
         return attendanceDao.findBySessionAndMember(sessionId, memberId).isPresent();
     }
 
     @Override
     public int getRegisteredCount(long sessionId) {
-        List<AttendanceRecord> records = getAttendanceForSession(sessionId);
-        return records.size(); // All records count as registrations
+        return getAttendanceForSession(sessionId).size();
+    }
+
+    /**
+     * Exports all attendance records to a CSV file.
+     *
+     * @param path target file path
+     * @throws FileOperationException if export fails
+     */
+    public void exportAttendanceReport(Path path) throws FileOperationException {
+        try {
+            List<AttendanceRecord> records = getAllAttendanceRecords();
+            CsvUtil.exportAttendanceReport(records, path);
+        } catch (Exception e) {
+            throw new FileOperationException("Failed to export attendance report", e);
+        }
     }
 }
-

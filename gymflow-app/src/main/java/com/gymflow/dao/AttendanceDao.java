@@ -44,8 +44,8 @@ public interface AttendanceDao {
      * Marks attendance for a member in a class session.
      *
      * @param sessionId the class session ID
-     * @param memberId the member ID
-     * @param attended whether the member attended
+     * @param memberId  the member ID
+     * @param attended  whether the member attended
      * @return Optional containing the AttendanceRecord if successful, empty otherwise
      */
     Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended);
@@ -70,7 +70,7 @@ public interface AttendanceDao {
      * Deletes an attendance record from the database.
      *
      * @param sessionId the class session ID
-     * @param memberId the member ID
+     * @param memberId  the member ID
      * @return true if deletion was successful, false otherwise
      */
     boolean delete(long sessionId, long memberId);
@@ -79,7 +79,7 @@ public interface AttendanceDao {
      * Finds an attendance record by session ID and member ID.
      *
      * @param sessionId the class session ID
-     * @param memberId the member ID
+     * @param memberId  the member ID
      * @return Optional containing the AttendanceRecord if found, empty otherwise
      */
     Optional<AttendanceRecord> findBySessionAndMember(long sessionId, long memberId);
