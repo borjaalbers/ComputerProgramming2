@@ -5,6 +5,9 @@ import com.gymflow.security.PasswordHasher;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Initializes the database schema and seed data on application startup.
@@ -352,6 +355,391 @@ public class DatabaseInitializer {
         
         if (usersInserted > 0) {
             System.out.println("Inserted " + usersInserted + " test user(s)");
+        }
+
+        // Insert sample workout plans (assigned to member by trainer)
+        insertSampleWorkoutPlans(stmt);
+
+        // Insert sample class sessions
+        insertSampleClassSessions(stmt);
+
+        // Insert sample equipment
+        insertSampleEquipment(stmt);
+
+        // Insert sample attendance records
+        insertSampleAttendanceRecords(stmt);
+    }
+
+    /**
+     * Inserts sample workout plans for testing.
+     * Assumes member_demo has id=1 and trainer_demo has id=2.
+     */
+    private void insertSampleWorkoutPlans(Statement stmt) throws SQLException {
+        int workoutPlansInserted = 0;
+
+        // Check if workout plans already exist
+        try {
+            var rs = stmt.executeQuery("SELECT COUNT(*) as count FROM workout_plans");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Workout plans already exist, skipping seed data");
+                return;
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet, continue
+        }
+
+        // Workout Plan 1: Beginner Full Body
+        try {
+            stmt.execute("""
+                INSERT INTO workout_plans (id, member_id, trainer_id, title, description, difficulty, 
+                    muscle_group, workout_type, duration_minutes, equipment_needed, target_sets, target_reps, rest_seconds)
+                VALUES (1, 1, 2, 'Beginner Full Body Workout', 
+                    'A comprehensive full-body workout perfect for beginners. Focuses on building strength and endurance.',
+                    'Beginner', 'Full Body', 45, 'Dumbbells, Bench, Resistance Bands', 3, 12, 60)
+                """);
+            workoutPlansInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Workout Plan 2: Upper Body Strength
+        try {
+            stmt.execute("""
+                INSERT INTO workout_plans (id, member_id, trainer_id, title, description, difficulty, 
+                    muscle_group, workout_type, duration_minutes, equipment_needed, target_sets, target_reps, rest_seconds)
+                VALUES (2, 1, 2, 'Upper Body Strength Training', 
+                    'Target your chest, back, shoulders, and arms with this strength-focused routine.',
+                    'Intermediate', 'Upper Body', 50, 'Barbell, Bench, Pull-up Bar', 4, 8, 90)
+                """);
+            workoutPlansInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Workout Plan 3: Cardio HIIT
+        try {
+            stmt.execute("""
+                INSERT INTO workout_plans (id, member_id, trainer_id, title, description, difficulty, 
+                    muscle_group, workout_type, duration_minutes, equipment_needed, target_sets, target_reps, rest_seconds)
+                VALUES (3, 1, 2, 'Cardio HIIT Session', 
+                    'High-intensity interval training to boost cardiovascular fitness and burn calories.',
+                    'Intermediate', 'Cardio', 30, 'Treadmill, Jump Rope, Mat', 5, 20, 30)
+                """);
+            workoutPlansInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Workout Plan 4: Lower Body Power
+        try {
+            stmt.execute("""
+                INSERT INTO workout_plans (id, member_id, trainer_id, title, description, difficulty, 
+                    muscle_group, workout_type, duration_minutes, equipment_needed, target_sets, target_reps, rest_seconds)
+                VALUES (4, 1, 2, 'Lower Body Power Workout', 
+                    'Build explosive power in your legs and glutes with this lower body focused routine.',
+                    'Advanced', 'Lower Body', 55, 'Squat Rack, Barbell, Kettlebells', 4, 6, 120)
+                """);
+            workoutPlansInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Workout Plan 5: Core Stability
+        try {
+            stmt.execute("""
+                INSERT INTO workout_plans (id, member_id, trainer_id, title, description, difficulty, 
+                    muscle_group, workout_type, duration_minutes, equipment_needed, target_sets, target_reps, rest_seconds)
+                VALUES (5, 1, 2, 'Core Stability & Balance', 
+                    'Strengthen your core muscles and improve balance with bodyweight and stability exercises.',
+                    'Beginner', 'Core', 25, 'Yoga Mat, Stability Ball, Resistance Bands', 3, 15, 45)
+                """);
+            workoutPlansInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        if (workoutPlansInserted > 0) {
+            System.out.println("Inserted " + workoutPlansInserted + " sample workout plan(s)");
+        }
+    }
+
+    /**
+     * Inserts sample class sessions for testing.
+     * Assumes trainer_demo has id=2.
+     */
+    private void insertSampleClassSessions(Statement stmt) throws SQLException {
+        int classSessionsInserted = 0;
+
+        // Check if class sessions already exist
+        try {
+            var rs = stmt.executeQuery("SELECT COUNT(*) as count FROM class_sessions");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Class sessions already exist, skipping seed data");
+                return;
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet, continue
+        }
+
+        // Get current timestamp and create future class sessions
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        
+        // Class Session 1: Morning Yoga (tomorrow at 8 AM)
+        try {
+            LocalDateTime sessionTime1 = now.plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0);
+            stmt.execute(String.format("""
+                INSERT INTO class_sessions (id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+                VALUES (1, 2, 'Morning Yoga Class', TIMESTAMP '%s', 15, 5)
+                """, sessionTime1.format(formatter)));
+            classSessionsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Class Session 2: HIIT Training (tomorrow at 6 PM)
+        try {
+            LocalDateTime sessionTime2 = now.plusDays(1).withHour(18).withMinute(0).withSecond(0).withNano(0);
+            stmt.execute(String.format("""
+                INSERT INTO class_sessions (id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+                VALUES (2, 2, 'Evening HIIT Training', TIMESTAMP '%s', 20, 3)
+                """, sessionTime2.format(formatter)));
+            classSessionsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Class Session 3: Strength Training (2 days from now at 10 AM)
+        try {
+            LocalDateTime sessionTime3 = now.plusDays(2).withHour(10).withMinute(0).withSecond(0).withNano(0);
+            stmt.execute(String.format("""
+                INSERT INTO class_sessions (id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+                VALUES (3, 2, 'Strength Training Workshop', TIMESTAMP '%s', 12, 2)
+                """, sessionTime3.format(formatter)));
+            classSessionsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Class Session 4: Cardio Blast (3 days from now at 7 AM)
+        try {
+            LocalDateTime sessionTime4 = now.plusDays(3).withHour(7).withMinute(0).withSecond(0).withNano(0);
+            stmt.execute(String.format("""
+                INSERT INTO class_sessions (id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+                VALUES (4, 2, 'Early Morning Cardio Blast', TIMESTAMP '%s', 25, 3)
+                """, sessionTime4.format(formatter)));
+            classSessionsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Class Session 5: Full Body Circuit (4 days from now at 5 PM)
+        try {
+            LocalDateTime sessionTime5 = now.plusDays(4).withHour(17).withMinute(0).withSecond(0).withNano(0);
+            stmt.execute(String.format("""
+                INSERT INTO class_sessions (id, trainer_id, title, schedule_timestamp, capacity, workout_plan_id)
+                VALUES (5, 2, 'Full Body Circuit Training', TIMESTAMP '%s', 18, 1)
+                """, sessionTime5.format(formatter)));
+            classSessionsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        if (classSessionsInserted > 0) {
+            System.out.println("Inserted " + classSessionsInserted + " sample class session(s)");
+        }
+    }
+
+    /**
+     * Inserts sample equipment for testing.
+     */
+    private void insertSampleEquipment(Statement stmt) throws SQLException {
+        int equipmentInserted = 0;
+
+        // Check if equipment already exists
+        try {
+            var rs = stmt.executeQuery("SELECT COUNT(*) as count FROM equipment");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Equipment already exists, skipping seed data");
+                return;
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet, continue
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate lastMonth = today.minusMonths(1);
+        LocalDate lastYear = today.minusYears(1);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        // Equipment 1: Treadmill
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (1, 'Treadmill #1', 'AVAILABLE', DATE '%s')
+                """, lastMonth.format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 2: Bench Press
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (2, 'Adjustable Bench Press', 'AVAILABLE', DATE '%s')
+                """, lastMonth.plusDays(5).format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 3: Dumbbell Set
+        try {
+            stmt.execute("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (3, 'Dumbbell Set (5-50 lbs)', 'AVAILABLE', NULL)
+                """);
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 4: Squat Rack
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (4, 'Power Squat Rack', 'AVAILABLE', DATE '%s')
+                """, lastMonth.minusDays(10).format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 5: Stationary Bike (needs service)
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (5, 'Stationary Bike #2', 'MAINTENANCE', DATE '%s')
+                """, lastYear.format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 6: Pull-up Bar
+        try {
+            stmt.execute("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (6, 'Wall-Mounted Pull-up Bar', 'AVAILABLE', NULL)
+                """);
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 7: Kettlebell Set
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (7, 'Kettlebell Set (10-40 kg)', 'AVAILABLE', DATE '%s')
+                """, lastMonth.plusDays(15).format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 8: Rowing Machine (in use)
+        try {
+            stmt.execute(String.format("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (8, 'Rowing Machine', 'IN_USE', DATE '%s')
+                """, lastMonth.minusDays(5).format(dateFormatter)));
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 9: Yoga Mats
+        try {
+            stmt.execute("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (9, 'Yoga Mat Set (20 mats)', 'AVAILABLE', NULL)
+                """);
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Equipment 10: Resistance Bands
+        try {
+            stmt.execute("""
+                INSERT INTO equipment (id, name, status, last_service)
+                VALUES (10, 'Resistance Band Set', 'AVAILABLE', NULL)
+                """);
+            equipmentInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        if (equipmentInserted > 0) {
+            System.out.println("Inserted " + equipmentInserted + " sample equipment item(s)");
+        }
+    }
+
+    /**
+     * Inserts sample attendance records for testing.
+     * Assumes member_demo has id=1.
+     */
+    private void insertSampleAttendanceRecords(Statement stmt) throws SQLException {
+        int attendanceRecordsInserted = 0;
+
+        // Check if attendance records already exist
+        try {
+            var rs = stmt.executeQuery("SELECT COUNT(*) as count FROM attendance_records");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Attendance records already exist, skipping seed data");
+                return;
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet, continue
+        }
+
+        // Register member for class session 1 (Morning Yoga)
+        try {
+            stmt.execute("""
+                INSERT INTO attendance_records (id, session_id, member_id, attended)
+                VALUES (1, 1, 1, FALSE)
+                """);
+            attendanceRecordsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Register member for class session 2 (Evening HIIT) - already attended
+        try {
+            stmt.execute("""
+                INSERT INTO attendance_records (id, session_id, member_id, attended)
+                VALUES (2, 2, 1, TRUE)
+                """);
+            attendanceRecordsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        // Register member for class session 3 (Strength Training)
+        try {
+            stmt.execute("""
+                INSERT INTO attendance_records (id, session_id, member_id, attended)
+                VALUES (3, 3, 1, FALSE)
+                """);
+            attendanceRecordsInserted++;
+        } catch (SQLException e) {
+            // Already exists, ignore
+        }
+
+        if (attendanceRecordsInserted > 0) {
+            System.out.println("Inserted " + attendanceRecordsInserted + " sample attendance record(s)");
         }
     }
 }
