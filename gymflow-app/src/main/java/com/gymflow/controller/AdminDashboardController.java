@@ -211,6 +211,8 @@ public class AdminDashboardController {
                 fileService.exportAttendanceReport(allRecords, file.getAbsolutePath());
                 showSuccessAlert("Export Successful", 
                     String.format("Exported %d attendance record(s) to %s", allRecords.size(), file.getName()));
+            } catch (com.gymflow.exception.FileOperationException | com.gymflow.exception.ValidationException e) {
+                showErrorAlert("Export Error", e.getMessage());
             } catch (IOException e) {
                 showErrorAlert("Export Error", "Failed to export attendance report: " + e.getMessage());
                 e.printStackTrace();

@@ -5,6 +5,7 @@ import com.gymflow.model.WorkoutPlan;
 import com.gymflow.util.CsvUtil;
 import com.gymflow.exception.FileOperationException;
 import com.gymflow.exception.ValidationException;
+import com.gymflow.exception.DataAccessException;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -29,11 +30,13 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
      * Exports all workout plans to a CSV using CsvUtil.
      */
     @Override
-    public void exportWorkoutTemplates(Path path) throws FileOperationException {
+    public void exportWorkoutTemplates(Path path) throws FileOperationException, DataAccessException {
         try {
             // Fetch all workout plans from DAO
             List<WorkoutPlan> plans = workoutPlanDao.findByTrainerId(0); // 0 for all trainers (adjust if needed)
             CsvUtil.exportWorkoutTemplates(plans, path);
+        } catch (DataAccessException dae) {
+            throw dae;
         } catch (Exception e) {
             throw new FileOperationException("Failed to export workout templates", e);
         }

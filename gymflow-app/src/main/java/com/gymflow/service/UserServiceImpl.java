@@ -5,6 +5,7 @@ import com.gymflow.dao.UserDaoImpl;
 import com.gymflow.model.Role;
 import com.gymflow.model.User;
 import com.gymflow.security.PasswordHasher;
+import com.gymflow.exception.DataAccessException;
 
 import java.util.Optional;
 
@@ -29,10 +30,9 @@ public class UserServiceImpl implements UserService {
      * @return Optional containing the created User if successful, empty if username already exists
      */
     @Override
-    public Optional<User> createUser(String username, String password, String fullName, String email, Role role) {
+    public Optional<User> createUser(String username, String password, String fullName, String email, Role role) throws DataAccessException {
         // Hash the password
         String passwordHash = PasswordHasher.sha256(password);
-
         // Create user via DAO
         return userDao.create(username, passwordHash, fullName, email, role);
     }

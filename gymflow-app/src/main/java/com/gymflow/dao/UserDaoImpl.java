@@ -215,7 +215,7 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public java.util.List<User> findByRole(Role role) {
+    public java.util.List<User> findByRole(Role role) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT u.id, u.username, u.full_name, u.email, u.created_at, r.name as role_name
             FROM users u
@@ -228,9 +228,7 @@ public class UserDaoImpl implements UserDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, role.name());
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     long id = rs.getLong("id");
@@ -239,44 +237,36 @@ public class UserDaoImpl implements UserDao {
                     String email = rs.getString("email");
                     LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
                     String roleName = rs.getString("role_name");
-
                     Role userRole = Role.fromString(roleName);
                     User user = UserFactory.createUser(userRole, id, username, fullName, email, createdAt);
                     users.add(user);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding users by role: " + e.getMessage());
-            e.printStackTrace();
+            throw new com.gymflow.exception.DataAccessException("Error finding users by role", e);
         }
-
         return users;
     }
 
     @Override
-    public int countByRole(Role role) {
+    public int countByRole(Role role) throws com.gymflow.exception.DataAccessException {
         String sql = """
             SELECT COUNT(*) as count
             FROM users u
             JOIN roles r ON u.role_id = r.id
             WHERE r.name = ?
             """;
-
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, role.name());
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("count");
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error counting users by role: " + e.getMessage());
-            e.printStackTrace();
+            throw new com.gymflow.exception.DataAccessException("Error counting users by role", e);
         }
-
         return 0;
     }
 }

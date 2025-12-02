@@ -3,6 +3,7 @@ package com.gymflow.service;
 import com.gymflow.dao.WorkoutPlanDao;
 import com.gymflow.dao.WorkoutPlanDaoImpl;
 import com.gymflow.model.WorkoutPlan;
+import com.gymflow.exception.DataAccessException;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.Optional;
 /**
  * Implementation of WorkoutService for workout plan business logic.
  */
+
 public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutPlanDao workoutPlanDao;
 
@@ -19,16 +21,14 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     public Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title, 
-                                                   String description, String difficulty) {
+                                                   String description, String difficulty) throws DataAccessException {
         // Validation
         if (title == null || title.trim().isEmpty()) {
-            System.err.println("Workout plan title cannot be empty");
-            return Optional.empty();
+            throw new IllegalArgumentException("Workout plan title cannot be empty");
         }
 
         if (memberId <= 0 || trainerId <= 0) {
-            System.err.println("Invalid member or trainer ID");
-            return Optional.empty();
+            throw new IllegalArgumentException("Invalid member or trainer ID");
         }
 
         // Normalize difficulty
@@ -40,21 +40,11 @@ public class WorkoutServiceImpl implements WorkoutService {
                                                   normalizedDifficulty, null);
 
         // Save to database
-        try {
-            Optional<WorkoutPlan> created = workoutPlanDao.create(workoutPlan);
-            
-            if (created.isPresent()) {
-                System.out.println("Workout plan created successfully: " + title);
-                return created;
-            } else {
-                System.err.println("Failed to create workout plan: " + title + " (DAO returned empty)");
-                return Optional.empty();
-            }
-        } catch (Exception e) {
-            System.err.println("Exception creating workout plan: " + title);
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-            return Optional.empty();
+        Optional<WorkoutPlan> created = workoutPlanDao.create(workoutPlan);
+        if (created.isPresent()) {
+            return created;
+        } else {
+            throw new DataAccessException("Failed to create workout plan: " + title);
         }
     }
 
@@ -62,16 +52,14 @@ public class WorkoutServiceImpl implements WorkoutService {
     public Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title,
                                                    String description, String difficulty, String muscleGroup,
                                                    String workoutType, Integer durationMinutes, String equipmentNeeded,
-                                                   Integer targetSets, Integer targetReps, Integer restSeconds) {
+                                                   Integer targetSets, Integer targetReps, Integer restSeconds) throws DataAccessException {
         // Validation
         if (title == null || title.trim().isEmpty()) {
-            System.err.println("Workout plan title cannot be empty");
-            return Optional.empty();
+            throw new IllegalArgumentException("Workout plan title cannot be empty");
         }
 
         if (memberId <= 0 || trainerId <= 0) {
-            System.err.println("Invalid member or trainer ID");
-            return Optional.empty();
+            throw new IllegalArgumentException("Invalid member or trainer ID");
         }
 
         // Normalize difficulty
@@ -91,101 +79,92 @@ public class WorkoutServiceImpl implements WorkoutService {
                                                   null);
 
         // Save to database
-        try {
-            Optional<WorkoutPlan> created = workoutPlanDao.create(workoutPlan);
-            
-            if (created.isPresent()) {
-                System.out.println("Workout plan created successfully: " + title);
-                return created;
-            } else {
-                System.err.println("Failed to create workout plan: " + title + " (DAO returned empty)");
-                return Optional.empty();
-            }
-        } catch (Exception e) {
-            System.err.println("Exception creating workout plan: " + title);
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-            return Optional.empty();
+        Optional<WorkoutPlan> created = workoutPlanDao.create(workoutPlan);
+        if (created.isPresent()) {
+            return created;
+        } else {
+            throw new DataAccessException("Failed to create workout plan: " + title);
         }
     }
 
     @Override
-    public List<WorkoutPlan> getWorkoutPlansForMember(long memberId) {
+    public List<WorkoutPlan> getWorkoutPlansForMember(long memberId) throws DataAccessException {
         if (memberId <= 0) {
-            System.err.println("Invalid member ID");
-            return List.of();
+            throw new IllegalArgumentException("Invalid member ID");
         }
-
-        return workoutPlanDao.findByMemberId(memberId);
+        try {
+            return workoutPlanDao.findByMemberId(memberId);
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to get workout plans for member: " + memberId, e);
+        }
     }
 
     @Override
-    public List<WorkoutPlan> getWorkoutPlansByTrainer(long trainerId) {
+    public List<WorkoutPlan> getWorkoutPlansByTrainer(long trainerId) throws DataAccessException {
         if (trainerId <= 0) {
-            System.err.println("Invalid trainer ID");
-            return List.of();
+            throw new IllegalArgumentException("Invalid trainer ID");
         }
-
-        return workoutPlanDao.findByTrainerId(trainerId);
+        try {
+            return workoutPlanDao.findByTrainerId(trainerId);
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to get workout plans for trainer: " + trainerId, e);
+        }
     }
 
     @Override
-    public Optional<WorkoutPlan> getWorkoutPlanById(long planId) {
+    public Optional<WorkoutPlan> getWorkoutPlanById(long planId) throws DataAccessException {
         if (planId <= 0) {
-            return Optional.empty();
+            throw new IllegalArgumentException("Invalid plan ID");
         }
-
-        return workoutPlanDao.findById(planId);
+        try {
+            return workoutPlanDao.findById(planId);
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to get workout plan by id: " + planId, e);
+        }
     }
 
     @Override
-    public boolean updateWorkoutPlan(long planId, String title, String description, String difficulty) {
-        Optional<WorkoutPlan> existingOpt = workoutPlanDao.findById(planId);
-        
-        if (existingOpt.isEmpty()) {
-            System.err.println("Workout plan not found: " + planId);
-            return false;
+    public boolean updateWorkoutPlan(long planId, String title, String description, String difficulty) throws DataAccessException {
+        try {
+            Optional<WorkoutPlan> existingOpt = workoutPlanDao.findById(planId);
+            if (existingOpt.isEmpty()) {
+                throw new DataAccessException("Workout plan not found: " + planId);
+            }
+            WorkoutPlan existing = existingOpt.get();
+            // Update only provided fields
+            if (title != null && !title.trim().isEmpty()) {
+                existing.setTitle(title.trim());
+            }
+            if (description != null) {
+                existing.setDescription(description.trim());
+            }
+            if (difficulty != null && !difficulty.trim().isEmpty()) {
+                existing.setDifficulty(difficulty.trim());
+            }
+            boolean success = workoutPlanDao.update(existing);
+            if (!success) {
+                throw new DataAccessException("Failed to update workout plan: " + planId);
+            }
+            return true;
+        } catch (Exception e) {
+            throw new DataAccessException("Error updating workout plan: " + planId, e);
         }
-
-        WorkoutPlan existing = existingOpt.get();
-
-        // Update only provided fields
-        if (title != null && !title.trim().isEmpty()) {
-            existing.setTitle(title.trim());
-        }
-        if (description != null) {
-            existing.setDescription(description.trim());
-        }
-        if (difficulty != null && !difficulty.trim().isEmpty()) {
-            existing.setDifficulty(difficulty.trim());
-        }
-
-        boolean success = workoutPlanDao.update(existing);
-        
-        if (success) {
-            System.out.println("Workout plan updated successfully: " + planId);
-        } else {
-            System.err.println("Failed to update workout plan: " + planId);
-        }
-
-        return success;
     }
 
     @Override
-    public boolean deleteWorkoutPlan(long planId) {
+    public boolean deleteWorkoutPlan(long planId) throws DataAccessException {
         if (planId <= 0) {
-            return false;
+            throw new IllegalArgumentException("Invalid plan ID");
         }
-
-        boolean success = workoutPlanDao.delete(planId);
-        
-        if (success) {
-            System.out.println("Workout plan deleted successfully: " + planId);
-        } else {
-            System.err.println("Failed to delete workout plan: " + planId);
+        try {
+            boolean success = workoutPlanDao.delete(planId);
+            if (!success) {
+                throw new DataAccessException("Failed to delete workout plan: " + planId);
+            }
+            return true;
+        } catch (Exception e) {
+            throw new DataAccessException("Error deleting workout plan: " + planId, e);
         }
-
-        return success;
     }
 }
 

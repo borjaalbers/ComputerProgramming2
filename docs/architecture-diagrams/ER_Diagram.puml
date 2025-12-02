@@ -1,0 +1,37 @@
+@startuml
+' ER Diagram for GymFlow Database
+entity "users" as users {
+  * id : long
+  * username : String
+  * password_hash : String
+  * role : String
+}
+entity "workout_plans" as workout_plans {
+  * id : long
+  * member_id : long
+  * trainer_id : long
+  * title : String
+  * ...
+}
+entity "class_sessions" as class_sessions {
+  * id : long
+  * workout_plan_id : long
+  * ...
+}
+entity "attendance_records" as attendance_records {
+  * id : long
+  * session_id : long
+  * member_id : long
+  * attended : boolean
+}
+entity "equipment" as equipment {
+  * id : long
+  * name : String
+  * status : String
+}
+users ||--o{ workout_plans : "member_id"
+users ||--o{ workout_plans : "trainer_id"
+workout_plans ||--o{ class_sessions : "workout_plan_id"
+class_sessions ||--o{ attendance_records : "session_id"
+users ||--o{ attendance_records : "member_id"
+@enduml

@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.gymflow.exception.DataAccessException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ public class AttendanceDaoImpl implements AttendanceDao {
     }
 
     @Override
-    public Optional<AttendanceRecord> findById(long id) {
+    public Optional<AttendanceRecord> findById(long id) throws DataAccessException {
         String sql = """
             SELECT id, session_id, member_id, attended
             FROM attendance_records
@@ -31,24 +32,20 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, id);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToAttendanceRecord(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding attendance record by ID: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error finding attendance record by ID", e);
         }
-
         return Optional.empty();
     }
 
     @Override
-    public List<AttendanceRecord> findBySessionId(long sessionId) {
+    public List<AttendanceRecord> findBySessionId(long sessionId) throws DataAccessException {
         String sql = """
             SELECT id, session_id, member_id, attended
             FROM attendance_records
@@ -60,24 +57,20 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, sessionId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     records.add(mapResultSetToAttendanceRecord(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding attendance records by session ID: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error finding attendance records by session ID", e);
         }
-
         return records;
     }
 
     @Override
-    public List<AttendanceRecord> findByMemberId(long memberId) {
+    public List<AttendanceRecord> findByMemberId(long memberId) throws DataAccessException {
         String sql = """
             SELECT id, session_id, member_id, attended
             FROM attendance_records
@@ -89,24 +82,20 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, memberId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     records.add(mapResultSetToAttendanceRecord(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding attendance records by member ID: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error finding attendance records by member ID", e);
         }
-
         return records;
     }
 
     @Override
-    public List<AttendanceRecord> findAll() {
+    public List<AttendanceRecord> findAll() throws DataAccessException {
         String sql = """
             SELECT id, session_id, member_id, attended
             FROM attendance_records
@@ -117,22 +106,19 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     records.add(mapResultSetToAttendanceRecord(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding all attendance records: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error finding all attendance records", e);
         }
-
         return records;
     }
 
     @Override
-    public Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) {
+    public Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) throws DataAccessException {
         // First check if record already exists
         String findSql = """
             SELECT id, session_id, member_id, attended
@@ -142,22 +128,18 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement findStmt = conn.prepareStatement(findSql)) {
-
             findStmt.setLong(1, sessionId);
             findStmt.setLong(2, memberId);
-
             try (ResultSet rs = findStmt.executeQuery()) {
                 if (rs.next()) {
                     // Update existing record
                     long id = rs.getLong("id");
                     String updateSql = "UPDATE attendance_records SET attended = ? WHERE id = ?";
-                    
                     try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
                         updateStmt.setBoolean(1, attended);
                         updateStmt.setLong(2, id);
                         updateStmt.executeUpdate();
                     }
-                    
                     return Optional.of(new AttendanceRecord(id, sessionId, memberId, attended));
                 } else {
                     // Create new record
@@ -165,12 +147,10 @@ public class AttendanceDaoImpl implements AttendanceDao {
                         INSERT INTO attendance_records (session_id, member_id, attended)
                         VALUES (?, ?, ?)
                         """;
-                    
                     try (PreparedStatement insertStmt = conn.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
                         insertStmt.setLong(1, sessionId);
                         insertStmt.setLong(2, memberId);
                         insertStmt.setBoolean(3, attended);
-                        
                         int rowsAffected = insertStmt.executeUpdate();
                         if (rowsAffected > 0) {
                             try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
@@ -184,15 +164,13 @@ public class AttendanceDaoImpl implements AttendanceDao {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error marking attendance: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error marking attendance", e);
         }
-
         return Optional.empty();
     }
 
     @Override
-    public Optional<AttendanceRecord> create(AttendanceRecord attendanceRecord) {
+    public Optional<AttendanceRecord> create(AttendanceRecord attendanceRecord) throws DataAccessException {
         String sql = """
             INSERT INTO attendance_records (session_id, member_id, attended)
             VALUES (?, ?, ?)
@@ -200,21 +178,17 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-
             stmt.setLong(1, attendanceRecord.getSessionId());
             stmt.setLong(2, attendanceRecord.getMemberId());
             stmt.setBoolean(3, attendanceRecord.isAttended());
-
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected == 0) {
                 return Optional.empty();
             }
-
             // Get the generated ID
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     long id = generatedKeys.getLong(1);
-
                     AttendanceRecord created = new AttendanceRecord(
                         id,
                         attendanceRecord.getSessionId(),
@@ -225,15 +199,13 @@ public class AttendanceDaoImpl implements AttendanceDao {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error creating attendance record: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error creating attendance record", e);
         }
-
         return Optional.empty();
     }
 
     @Override
-    public boolean update(AttendanceRecord attendanceRecord) {
+    public boolean update(AttendanceRecord attendanceRecord) throws DataAccessException {
         String sql = """
             UPDATE attendance_records
             SET attended = ?
@@ -242,21 +214,17 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setBoolean(1, attendanceRecord.isAttended());
             stmt.setLong(2, attendanceRecord.getId());
-
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("Error updating attendance record: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+            throw new DataAccessException("Error updating attendance record", e);
         }
     }
 
     @Override
-    public boolean delete(long sessionId, long memberId) {
+    public boolean delete(long sessionId, long memberId) throws DataAccessException {
         String sql = """
             DELETE FROM attendance_records
             WHERE session_id = ? AND member_id = ?
@@ -264,21 +232,17 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, sessionId);
             stmt.setLong(2, memberId);
-
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
-            System.err.println("Error deleting attendance record: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+            throw new DataAccessException("Error deleting attendance record", e);
         }
     }
 
     @Override
-    public Optional<AttendanceRecord> findBySessionAndMember(long sessionId, long memberId) {
+    public Optional<AttendanceRecord> findBySessionAndMember(long sessionId, long memberId) throws DataAccessException {
         String sql = """
             SELECT id, session_id, member_id, attended
             FROM attendance_records
@@ -287,20 +251,16 @@ public class AttendanceDaoImpl implements AttendanceDao {
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, sessionId);
             stmt.setLong(2, memberId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToAttendanceRecord(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding attendance record by session and member: " + e.getMessage());
-            e.printStackTrace();
+            throw new DataAccessException("Error finding attendance record by session and member", e);
         }
-
         return Optional.empty();
     }
 

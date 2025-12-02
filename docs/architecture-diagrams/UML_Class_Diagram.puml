@@ -1,0 +1,47 @@
+@startuml
+' UML Class Diagram for GymFlow
+' (Add more classes and relationships as needed)
+
+package model {
+  class User {
+    - id: long
+    - username: String
+    - passwordHash: String
+    - role: Role
+  }
+  class Member extends User
+  class Trainer extends User
+  class Administrator extends User
+  class WorkoutPlan {
+    - id: long
+    - memberId: long
+    - trainerId: long
+    - title: String
+    - ...
+  }
+  class ClassSession {
+    - id: long
+    - workoutPlanId: long
+    - ...
+  }
+  class AttendanceRecord {
+    - id: long
+    - sessionId: long
+    - memberId: long
+    - attended: boolean
+  }
+  class Equipment {
+    - id: long
+    - name: String
+    - status: EquipmentStatus
+  }
+  enum Role { MEMBER, TRAINER, ADMIN }
+}
+
+User <|-- Member
+User <|-- Trainer
+User <|-- Administrator
+WorkoutPlan "1" -- "*" ClassSession : assignedTo
+ClassSession "1" -- "*" AttendanceRecord : attendance
+
+@enduml

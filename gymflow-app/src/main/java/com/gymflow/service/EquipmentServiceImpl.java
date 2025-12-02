@@ -4,6 +4,7 @@ import com.gymflow.dao.EquipmentDao;
 import com.gymflow.dao.EquipmentDaoImpl;
 import com.gymflow.model.Equipment;
 import com.gymflow.model.EquipmentStatus;
+import com.gymflow.exception.DataAccessException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,7 +21,7 @@ public class EquipmentServiceImpl implements EquipmentService {
     }
 
     @Override
-    public Optional<Equipment> createEquipment(String name, EquipmentStatus status, LocalDate lastServiceDate) {
+    public Optional<Equipment> createEquipment(String name, EquipmentStatus status, LocalDate lastServiceDate) throws DataAccessException {
         // Validation
         if (name == null || name.trim().isEmpty()) {
             System.err.println("Equipment name cannot be empty");
@@ -34,50 +35,43 @@ public class EquipmentServiceImpl implements EquipmentService {
 
         // Save to database
         Optional<Equipment> created = equipmentDao.create(equipment);
-        
         if (created.isPresent()) {
             System.out.println("Equipment created successfully: " + name);
         } else {
             System.err.println("Failed to create equipment: " + name);
         }
-
         return created;
     }
 
     @Override
-    public List<Equipment> getAllEquipment() {
+    public List<Equipment> getAllEquipment() throws DataAccessException {
         return equipmentDao.findAll();
     }
 
     @Override
-    public List<Equipment> getEquipmentByStatus(EquipmentStatus status) {
+    public List<Equipment> getEquipmentByStatus(EquipmentStatus status) throws DataAccessException {
         if (status == null) {
             return List.of();
         }
-
         return equipmentDao.findByStatus(status);
     }
 
     @Override
-    public Optional<Equipment> getEquipmentById(long equipmentId) {
+    public Optional<Equipment> getEquipmentById(long equipmentId) throws DataAccessException {
         if (equipmentId <= 0) {
             return Optional.empty();
         }
-
         return equipmentDao.findById(equipmentId);
     }
 
     @Override
-    public boolean updateEquipment(long equipmentId, String name, EquipmentStatus status, LocalDate lastServiceDate) {
+    public boolean updateEquipment(long equipmentId, String name, EquipmentStatus status, LocalDate lastServiceDate) throws DataAccessException {
         Optional<Equipment> existingOpt = equipmentDao.findById(equipmentId);
-        
         if (existingOpt.isEmpty()) {
             System.err.println("Equipment not found: " + equipmentId);
             return false;
         }
-
         Equipment existing = existingOpt.get();
-
         // Update only provided fields
         if (name != null && !name.trim().isEmpty()) {
             existing.setName(name.trim());
@@ -88,37 +82,31 @@ public class EquipmentServiceImpl implements EquipmentService {
         if (lastServiceDate != null) {
             existing.setLastServiceDate(lastServiceDate);
         }
-
         boolean success = equipmentDao.update(existing);
-        
         if (success) {
             System.out.println("Equipment updated successfully: " + equipmentId);
         } else {
             System.err.println("Failed to update equipment: " + equipmentId);
         }
-
         return success;
     }
 
     @Override
-    public boolean updateEquipmentStatus(long equipmentId, EquipmentStatus status) {
+    public boolean updateEquipmentStatus(long equipmentId, EquipmentStatus status) throws DataAccessException {
         if (equipmentId <= 0 || status == null) {
             return false;
         }
-
         boolean success = equipmentDao.updateStatus(equipmentId, status);
-        
         if (success) {
             System.out.println("Equipment status updated successfully: " + equipmentId + " -> " + status);
         } else {
             System.err.println("Failed to update equipment status: " + equipmentId);
         }
-
         return success;
     }
 
     @Override
-    public boolean markEquipmentForService(long equipmentId) {
+    public boolean markEquipmentForService(long equipmentId) throws DataAccessException {
         return updateEquipmentStatus(equipmentId, EquipmentStatus.MAINTENANCE);
     }
 }

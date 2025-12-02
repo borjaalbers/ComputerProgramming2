@@ -4,6 +4,7 @@ import com.gymflow.model.AttendanceRecord;
 
 import java.util.List;
 import java.util.Optional;
+import com.gymflow.exception.DataAccessException;
 
 /**
  * Defines business operations for attendance tracking.
@@ -17,7 +18,7 @@ public interface AttendanceService {
      * @param attended whether the member attended
      * @return Optional containing the AttendanceRecord if successful, empty otherwise
      */
-    Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended);
+    Optional<AttendanceRecord> markAttendance(long sessionId, long memberId, boolean attended) throws DataAccessException;
 
     /**
      * Gets all attendance records for a specific class session.
@@ -25,7 +26,7 @@ public interface AttendanceService {
      * @param sessionId the class session ID
      * @return list of attendance records for the session
      */
-    List<AttendanceRecord> getAttendanceForSession(long sessionId);
+    List<AttendanceRecord> getAttendanceForSession(long sessionId) throws DataAccessException;
 
     /**
      * Gets all attendance records for a specific member.
@@ -33,7 +34,7 @@ public interface AttendanceService {
      * @param memberId the member ID
      * @return list of attendance records for the member
      */
-    List<AttendanceRecord> getAttendanceForMember(long memberId);
+    List<AttendanceRecord> getAttendanceForMember(long memberId) throws DataAccessException;
 
     /**
      * Gets an attendance record by its ID.
@@ -41,7 +42,7 @@ public interface AttendanceService {
      * @param recordId the attendance record ID
      * @return Optional containing the AttendanceRecord if found, empty otherwise
      */
-    Optional<AttendanceRecord> getAttendanceRecordById(long recordId);
+    Optional<AttendanceRecord> getAttendanceRecordById(long recordId) throws DataAccessException;
 
     /**
      * Gets the attendance count for a class session.
@@ -49,14 +50,14 @@ public interface AttendanceService {
      * @param sessionId the class session ID
      * @return number of members who attended
      */
-    int getAttendanceCount(long sessionId);
+    int getAttendanceCount(long sessionId) throws DataAccessException;
 
     /**
      * Gets all attendance records in the system.
      *
      * @return list of all attendance records
      */
-    List<AttendanceRecord> getAllAttendanceRecords();
+    List<AttendanceRecord> getAllAttendanceRecords() throws DataAccessException;
 
     /**
      * Registers a member for a class session (creates attendance record with attended=false).
@@ -65,7 +66,7 @@ public interface AttendanceService {
      * @param memberId the member ID
      * @return Optional containing the AttendanceRecord if successful, empty otherwise
      */
-    Optional<AttendanceRecord> registerForClass(long sessionId, long memberId);
+    Optional<AttendanceRecord> registerForClass(long sessionId, long memberId) throws DataAccessException;
 
     /**
      * Unregisters a member from a class session (removes attendance record).
@@ -74,7 +75,7 @@ public interface AttendanceService {
      * @param memberId the member ID
      * @return true if unregistration was successful, false otherwise
      */
-    boolean unregisterFromClass(long sessionId, long memberId);
+    boolean unregisterFromClass(long sessionId, long memberId) throws DataAccessException;
 
     /**
      * Checks if a member is registered for a class session.
@@ -83,7 +84,7 @@ public interface AttendanceService {
      * @param memberId the member ID
      * @return true if member is registered, false otherwise
      */
-    boolean isRegisteredForClass(long sessionId, long memberId);
+    boolean isRegisteredForClass(long sessionId, long memberId) throws DataAccessException;
 
     /**
      * Gets the number of registered members for a class session.
@@ -91,6 +92,6 @@ public interface AttendanceService {
      * @param sessionId the class session ID
      * @return number of registered members
      */
-    int getRegisteredCount(long sessionId);
+    int getRegisteredCount(long sessionId) throws DataAccessException;
 }
 

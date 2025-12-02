@@ -7,6 +7,7 @@ import com.gymflow.model.WorkoutPlan;
 import com.gymflow.security.SessionManager;
 import com.gymflow.service.AttendanceService;
 import com.gymflow.service.AttendanceServiceImpl;
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.service.ClassScheduleService;
 import com.gymflow.service.ClassScheduleServiceImpl;
 import com.gymflow.service.WorkoutService;
@@ -601,31 +602,30 @@ public class MemberDashboardController {
         }
 
         // Check if already registered
-        if (attendanceService.isRegisteredForClass(selectedSession.getId(), currentUser.getId())) {
-            showErrorAlert("Already Registered", "You are already registered for this class");
-            return;
-        }
-
-        // Check capacity
-        int registered = attendanceService.getRegisteredCount(selectedSession.getId());
-        if (registered >= selectedSession.getCapacity()) {
-            showErrorAlert("Class Full", "This class has reached its capacity (" + selectedSession.getCapacity() + " members)");
-            return;
-        }
-
-        // Register
-        Optional<com.gymflow.model.AttendanceRecord> result = attendanceService.registerForClass(
-            selectedSession.getId(), currentUser.getId()
-        );
-
-        if (result.isPresent()) {
-            showSuccessAlert("Success", "Successfully registered for '" + selectedSession.getTitle() + "'");
-            // Refresh the table to update the Registered column
-            refreshClassTable();
-            // Also refresh workout plans in case this class has a workout plan
-            loadWorkoutPlans();
-        } else {
-            showErrorAlert("Error", "Failed to register for class. Please try again.");
+        try {
+            if (attendanceService.isRegisteredForClass(selectedSession.getId(), currentUser.getId())) {
+                showErrorAlert("Already Registered", "You are already registered for this class");
+                return;
+            }
+            // Check capacity
+            int registered = attendanceService.getRegisteredCount(selectedSession.getId());
+            if (registered >= selectedSession.getCapacity()) {
+                showErrorAlert("Class Full", "This class has reached its capacity (" + selectedSession.getCapacity() + " members)");
+                return;
+            }
+            // Register
+            Optional<com.gymflow.model.AttendanceRecord> result = attendanceService.registerForClass(
+                selectedSession.getId(), currentUser.getId()
+            );
+            if (result.isPresent()) {
+                showSuccessAlert("Success", "Successfully registered for '" + selectedSession.getTitle() + "'");
+                refreshClassTable();
+                loadWorkoutPlans();
+            } else {
+                showErrorAlert("Error", "Failed to register for class. Please try again.");
+            }
+        } catch (DataAccessException dae) {
+            showErrorAlert("Database Error", "A database error occurred: " + dae.getMessage());
         }
     }
     
@@ -677,31 +677,31 @@ public class MemberDashboardController {
         }
 
         // Check if registered
-        if (!attendanceService.isRegisteredForClass(selectedSession.getId(), currentUser.getId())) {
-            showErrorAlert("Not Registered", "You are not registered for this class");
-            return;
-        }
-
-        // Confirm unregistration
-        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmDialog.setTitle("Confirm Unregistration");
-        confirmDialog.setHeaderText("Unregister from Class");
-        confirmDialog.setContentText("Are you sure you want to unregister from '" + selectedSession.getTitle() + "'?");
-
-        Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
-        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-            boolean success = attendanceService.unregisterFromClass(
-                selectedSession.getId(), currentUser.getId()
-            );
-
-            if (success) {
-                showSuccessAlert("Success", "Successfully unregistered from '" + selectedSession.getTitle() + "'");
-                refreshClassTable(); // Refresh the table
-                // Also refresh workout plans
-                loadWorkoutPlans();
-            } else {
-                showErrorAlert("Error", "Failed to unregister from class");
+        try {
+            if (!attendanceService.isRegisteredForClass(selectedSession.getId(), currentUser.getId())) {
+                showErrorAlert("Not Registered", "You are not registered for this class");
+                return;
             }
+            // Confirm unregistration
+            Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmDialog.setTitle("Confirm Unregistration");
+            confirmDialog.setHeaderText("Unregister from Class");
+            confirmDialog.setContentText("Are you sure you want to unregister from '" + selectedSession.getTitle() + "'?");
+            Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
+            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+                boolean success = attendanceService.unregisterFromClass(
+                    selectedSession.getId(), currentUser.getId()
+                );
+                if (success) {
+                    showSuccessAlert("Success", "Successfully unregistered from '" + selectedSession.getTitle() + "'");
+                    refreshClassTable();
+                    loadWorkoutPlans();
+                } else {
+                    showErrorAlert("Error", "Failed to unregister from class");
+                }
+            }
+        } catch (DataAccessException dae) {
+            showErrorAlert("Database Error", "A database error occurred: " + dae.getMessage());
         }
     }
 

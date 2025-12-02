@@ -4,6 +4,7 @@ import com.gymflow.model.Role;
 import com.gymflow.model.User;
 
 import java.util.Optional;
+import com.gymflow.exception.DataAccessException;
 
 /**
  * Service interface for user management operations.
@@ -19,6 +20,6 @@ public interface UserService {
      * @param role the user's role
      * @return Optional containing the created User if successful, empty if username already exists
      */
-    Optional<User> createUser(String username, String password, String fullName, String email, Role role);
+    Optional<User> createUser(String username, String password, String fullName, String email, Role role) throws DataAccessException;
 }
 

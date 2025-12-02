@@ -16,14 +16,14 @@ public interface EquipmentDao {
      * @param id the equipment ID
      * @return Optional containing the Equipment if found, empty otherwise
      */
-    Optional<Equipment> findById(long id);
+    Optional<Equipment> findById(long id) throws com.gymflow.exception.DataAccessException;
 
     /**
      * Finds all equipment in the database.
      *
      * @return list of all equipment
      */
-    List<Equipment> findAll();
+    List<Equipment> findAll() throws com.gymflow.exception.DataAccessException;
 
     /**
      * Finds equipment by status.
@@ -31,7 +31,7 @@ public interface EquipmentDao {
      * @param status the equipment status to filter by
      * @return list of equipment with the specified status
      */
-    List<Equipment> findByStatus(EquipmentStatus status);
+    List<Equipment> findByStatus(EquipmentStatus status) throws com.gymflow.exception.DataAccessException;
 
     /**
      * Creates a new equipment entry in the database.
@@ -39,7 +39,7 @@ public interface EquipmentDao {
      * @param equipment the equipment to create (id will be generated)
      * @return Optional containing the created Equipment with generated ID, empty if creation fails
      */
-    Optional<Equipment> create(Equipment equipment);
+    Optional<Equipment> create(Equipment equipment) throws com.gymflow.exception.DataAccessException;
 
     /**
      * Updates an existing equipment entry in the database.
@@ -47,7 +47,7 @@ public interface EquipmentDao {
      * @param equipment the equipment to update (must have valid id)
      * @return true if update was successful, false otherwise
      */
-    boolean update(Equipment equipment);
+    boolean update(Equipment equipment) throws com.gymflow.exception.DataAccessException;
 
     /**
      * Updates only the status of an equipment entry.
@@ -56,6 +56,6 @@ public interface EquipmentDao {
      * @param status the new status
      * @return true if update was successful, false otherwise
      */
-    boolean updateStatus(long id, EquipmentStatus status);
+    boolean updateStatus(long id, EquipmentStatus status) throws com.gymflow.exception.DataAccessException;
 }
 

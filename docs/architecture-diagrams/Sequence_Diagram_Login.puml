@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant LoginController
+participant AuthService
+participant UserDao
+
+User -> LoginController: enter credentials
+LoginController -> AuthService: authenticate(username, password)
+AuthService -> UserDao: findByUsername(username)
+UserDao --> AuthService: User
+AuthService -> AuthService: verify password
+AuthService --> LoginController: success/failure
+LoginController -> User: show dashboard or error
+@enduml

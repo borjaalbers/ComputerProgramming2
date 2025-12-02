@@ -528,6 +528,8 @@ public class TrainerDashboardController {
                 fileService.exportWorkoutTemplates(plans, file.getAbsolutePath());
                 showSuccessAlert("Export Successful", 
                     String.format("Exported %d workout plan(s) to %s", plans.size(), file.getName()));
+            } catch (com.gymflow.exception.FileOperationException | com.gymflow.exception.ValidationException e) {
+                showErrorAlert("Export Error", e.getMessage());
             } catch (IOException e) {
                 showErrorAlert("Export Error", "Failed to export workout plans: " + e.getMessage());
                 e.printStackTrace();
@@ -585,6 +587,8 @@ public class TrainerDashboardController {
                 }
                 showSuccessAlert("Import Complete", message);
                 loadWorkoutPlans(); // Refresh the table
+            } catch (com.gymflow.exception.FileOperationException | com.gymflow.exception.ValidationException e) {
+                showErrorAlert("Import Error", e.getMessage());
             } catch (FileNotFoundException e) {
                 showErrorAlert("File Not Found", "The selected file could not be found");
             } catch (IllegalArgumentException e) {
