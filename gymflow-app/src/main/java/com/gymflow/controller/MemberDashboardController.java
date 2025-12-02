@@ -525,7 +525,7 @@ public class MemberDashboardController {
 
     private void loadWorkoutPlans() {
         User currentUser = sessionManager.getCurrentUser();
-        if (currentUser != null && currentUser instanceof Member) {
+        if (currentUser instanceof Member) {
             // Clear the map
             workoutToClassMap.clear();
             
