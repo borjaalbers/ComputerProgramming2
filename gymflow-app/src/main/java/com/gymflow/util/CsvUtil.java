@@ -220,7 +220,7 @@ public final class CsvUtil {
     // ==========================
     // Utilities
     // ==========================
-    private static void validateFile(Path filePath) throws FileOperationException {
+    public static void validateFile(Path filePath) throws FileOperationException {
         if (filePath == null) throw new FileOperationException("File path cannot be null");
         if (!Files.exists(filePath)) throw new FileOperationException("File not found: " + filePath);
         if (!Files.isRegularFile(filePath)) throw new FileOperationException("Path is not a regular file: " + filePath);

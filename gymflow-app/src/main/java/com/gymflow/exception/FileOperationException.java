@@ -1,6 +1,10 @@
 package com.gymflow.exception;
 
-public class FileOperationException extends GymFlowException {
+/**
+ * Custom exception for file operation errors.
+ * Extends RuntimeException to avoid strict interface declaration requirements.
+ */
+public class FileOperationException extends RuntimeException {
     public FileOperationException(String message) {
         super(message);
     }

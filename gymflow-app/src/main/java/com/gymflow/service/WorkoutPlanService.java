@@ -1,5 +1,6 @@
 package com.gymflow.service;
 
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.WorkoutPlan;
 import com.gymflow.exception.FileOperationException;
 import com.gymflow.exception.ValidationException;
@@ -19,7 +20,7 @@ public interface WorkoutPlanService {
      * @param path target file path
      * @throws FileOperationException if export fails
      */
-    void exportWorkoutTemplates(Path path) throws FileOperationException;
+    void exportWorkoutTemplates(Path path) throws FileOperationException, DataAccessException;
 
     /**
      * Imports workout plans from a CSV file at the specified path.

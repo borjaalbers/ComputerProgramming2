@@ -35,8 +35,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             // Fetch all workout plans from DAO
             List<WorkoutPlan> plans = workoutPlanDao.findByTrainerId(0); // 0 for all trainers (adjust if needed)
             CsvUtil.exportWorkoutTemplates(plans, path);
-        } catch (DataAccessException dae) {
-            throw dae;
         } catch (Exception e) {
             throw new FileOperationException("Failed to export workout templates", e);
         }

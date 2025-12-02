@@ -1,5 +1,6 @@
 package com.gymflow.service;
 
+import com.gymflow.exception.DataAccessException;
 import com.gymflow.model.WorkoutPlan;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public interface WorkoutService {
      * @return Optional containing the created WorkoutPlan if successful, empty otherwise
      */
     Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title, 
-                                            String description, String difficulty);
+                                            String description, String difficulty) throws DataAccessException;
     
     /**
      * Creates a new workout plan with all fields.
@@ -42,7 +43,7 @@ public interface WorkoutService {
     Optional<WorkoutPlan> createWorkoutPlan(long memberId, long trainerId, String title,
                                             String description, String difficulty, String muscleGroup,
                                             String workoutType, Integer durationMinutes, String equipmentNeeded,
-                                            Integer targetSets, Integer targetReps, Integer restSeconds);
+                                            Integer targetSets, Integer targetReps, Integer restSeconds) throws DataAccessException;
 
     /**
      * Gets all workout plans for a specific member.
@@ -50,7 +51,7 @@ public interface WorkoutService {
      * @param memberId the member ID
      * @return list of workout plans for the member
      */
-    List<WorkoutPlan> getWorkoutPlansForMember(long memberId);
+    List<WorkoutPlan> getWorkoutPlansForMember(long memberId) throws DataAccessException;
 
     /**
      * Gets all workout plans created by a specific trainer.
@@ -58,7 +59,7 @@ public interface WorkoutService {
      * @param trainerId the trainer ID
      * @return list of workout plans created by the trainer
      */
-    List<WorkoutPlan> getWorkoutPlansByTrainer(long trainerId);
+    List<WorkoutPlan> getWorkoutPlansByTrainer(long trainerId) throws DataAccessException;
 
     /**
      * Gets a workout plan by its ID.
@@ -66,7 +67,7 @@ public interface WorkoutService {
      * @param planId the workout plan ID
      * @return Optional containing the WorkoutPlan if found, empty otherwise
      */
-    Optional<WorkoutPlan> getWorkoutPlanById(long planId);
+    Optional<WorkoutPlan> getWorkoutPlanById(long planId) throws DataAccessException;
 
     /**
      * Updates an existing workout plan.
@@ -77,7 +78,7 @@ public interface WorkoutService {
      * @param difficulty the new difficulty (can be null to keep existing)
      * @return true if update was successful, false otherwise
      */
-    boolean updateWorkoutPlan(long planId, String title, String description, String difficulty);
+    boolean updateWorkoutPlan(long planId, String title, String description, String difficulty) throws DataAccessException;
 
     /**
      * Deletes a workout plan.

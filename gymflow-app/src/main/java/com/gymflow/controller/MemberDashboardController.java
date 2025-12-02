@@ -149,7 +149,7 @@ public class MemberDashboardController {
             // Initialize collections first
             upcomingClasses = FXCollections.observableArrayList();
             workoutPlans = FXCollections.observableArrayList();
-            
+
             loadUserInfo();
             setupWorkoutTable();
             setupClassTable();
@@ -179,17 +179,17 @@ public class MemberDashboardController {
     }
 
     private void setupWorkoutTable() {
-        if (workoutTitleColumn == null || workoutTypeColumn == null || 
-            workoutMuscleGroupColumn == null || workoutDifficultyColumn == null ||
-            workoutDurationColumn == null || workoutSetsRepsColumn == null ||
-            workoutCreatedColumn == null || workoutSourceColumn == null ||
-            workoutStatusColumn == null) {
+        if (workoutTitleColumn == null || workoutTypeColumn == null ||
+                workoutMuscleGroupColumn == null || workoutDifficultyColumn == null ||
+                workoutDurationColumn == null || workoutSetsRepsColumn == null ||
+                workoutCreatedColumn == null || workoutSourceColumn == null ||
+                workoutStatusColumn == null) {
             java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).warning("Some workout table columns are null");
             return;
         }
-        
+
         workoutTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        
+
         // Source column - shows which class the workout belongs to
         workoutSourceColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
@@ -202,7 +202,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("-");
         });
-        
+
         workoutTypeColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null && plan.getWorkoutType() != null) {
@@ -210,7 +210,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("-");
         });
-        
+
         workoutMuscleGroupColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null && plan.getMuscleGroup() != null) {
@@ -218,9 +218,9 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("-");
         });
-        
+
         workoutDifficultyColumn.setCellValueFactory(new PropertyValueFactory<>("difficulty"));
-        
+
         workoutDurationColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null && plan.getDurationMinutes() != null) {
@@ -228,7 +228,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("-");
         });
-        
+
         workoutSetsRepsColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null) {
@@ -244,7 +244,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("-");
         });
-        
+
         // Status column - shows if completed
         workoutStatusColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
@@ -252,13 +252,13 @@ public class MemberDashboardController {
             if (plan != null && currentUser instanceof Member) {
                 boolean completed = completionService.isCompleted(plan.getId(), currentUser.getId());
                 javafx.beans.property.SimpleStringProperty prop = new javafx.beans.property.SimpleStringProperty(
-                    completed ? "✓ Completed" : "Pending"
+                        completed ? "✓ Completed" : "Pending"
                 );
                 return prop;
             }
             return new javafx.beans.property.SimpleStringProperty("Pending");
         });
-        
+
         workoutCreatedColumn.setCellValueFactory(cellData -> {
             WorkoutPlan plan = cellData.getValue();
             if (plan != null && plan.getCreatedAt() != null) {
@@ -267,19 +267,19 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
-        
+
         // Enable row selection
         workoutTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.SINGLE);
-        
+
         // Update button states based on selection
         workoutTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             updateWorkoutButtonStates(newSelection);
         });
-        
+
         // Initialize button states
         updateWorkoutButtonStates(null);
     }
-    
+
     /**
      * Updates the enabled state of workout action buttons based on selection.
      */
@@ -290,7 +290,7 @@ public class MemberDashboardController {
             if (deleteWorkoutButton != null) deleteWorkoutButton.setDisable(true);
             return;
         }
-        
+
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser == null || !(currentUser instanceof Member)) {
             if (viewDetailsButton != null) viewDetailsButton.setDisable(true);
@@ -298,23 +298,23 @@ public class MemberDashboardController {
             if (deleteWorkoutButton != null) deleteWorkoutButton.setDisable(true);
             return;
         }
-        
+
         // Check if workout is from a class
         ClassSession sourceClass = workoutToClassMap.get(selectedPlan.getId());
         boolean isFromClass = sourceClass != null;
-        
+
         // Check if already completed
         boolean isCompleted = completionService.isCompleted(selectedPlan.getId(), currentUser.getId());
-        
+
         if (viewDetailsButton != null) {
             viewDetailsButton.setDisable(false);
         }
-        
+
         if (markCompletedButton != null) {
             markCompletedButton.setDisable(isCompleted);
             markCompletedButton.setText(isCompleted ? "Already Completed" : "Mark as Completed");
         }
-        
+
         // Only allow deletion of direct assignments (not class workouts)
         if (deleteWorkoutButton != null) {
             deleteWorkoutButton.setDisable(isFromClass);
@@ -326,17 +326,17 @@ public class MemberDashboardController {
 
     private void setupClassTable() {
         if (classTable == null || classNameColumn == null || classTrainerColumn == null ||
-            classDateTimeColumn == null || classCapacityColumn == null ||
-            classRegisteredColumn == null || classWorkoutPlanColumn == null) {
+                classDateTimeColumn == null || classCapacityColumn == null ||
+                classRegisteredColumn == null || classWorkoutPlanColumn == null) {
             java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).warning("Some class table columns are null");
             return;
         }
-        
+
         // Enable row selection
         classTable.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.SINGLE);
-        
+
         classNameColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        
+
         // Get trainer name from database
         classTrainerColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
@@ -346,7 +346,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("Unknown");
         });
-        
+
         classDateTimeColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
             if (session != null && session.getScheduleTimestamp() != null) {
@@ -355,9 +355,9 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
-        
+
         classCapacityColumn.setCellValueFactory(new PropertyValueFactory<>("capacity"));
-        
+
         // Registered column - use custom cell factory that always checks current state
         classRegisteredColumn.setCellFactory(column -> new javafx.scene.control.TableCell<ClassSession, String>() {
             @Override
@@ -373,7 +373,7 @@ public class MemberDashboardController {
                         boolean isRegistered = false;
                         try {
                             isRegistered = attendanceService.isRegisteredForClass(
-                                session.getId(), currentUser.getId()
+                                    session.getId(), currentUser.getId()
                             );
                         } catch (com.gymflow.exception.DataAccessException e) {
                             showErrorDialog("Database error while checking registration status: " + e.getMessage());
@@ -392,7 +392,7 @@ public class MemberDashboardController {
                 }
             }
         });
-        
+
         // Set a dummy cell value factory (required by JavaFX, but we use custom cell factory above)
         classRegisteredColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
@@ -402,7 +402,7 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("");
         });
-        
+
         // Workout Plan column - shows the workout plan for the class
         classWorkoutPlanColumn.setCellValueFactory(cellData -> {
             ClassSession session = cellData.getValue();
@@ -413,12 +413,12 @@ public class MemberDashboardController {
             }
             return new javafx.beans.property.SimpleStringProperty("No workout plan");
         });
-        
+
         // Add visual feedback for selected row and update button states
         classTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             updateButtonStates(newSelection);
         });
-        
+
         // Add double-click to register and visual feedback for selection
         classTable.setRowFactory(tv -> {
             javafx.scene.control.TableRow<ClassSession> row = new javafx.scene.control.TableRow<ClassSession>() {
@@ -437,7 +437,7 @@ public class MemberDashboardController {
                     }
                 }
             };
-            
+
             row.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {
                 if (isNowSelected) {
                     row.setStyle("-fx-background-color: #e3f2fd;");
@@ -445,7 +445,7 @@ public class MemberDashboardController {
                     row.setStyle("");
                 }
             });
-            
+
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && !row.isEmpty()) {
                     // Double-click to register
@@ -454,11 +454,11 @@ public class MemberDashboardController {
             });
             return row;
         });
-        
+
         // Initialize button states
         updateButtonStates(null);
     }
-    
+
     /**
      * Updates the enabled state of register/unregister buttons based on selection.
      */
@@ -468,18 +468,18 @@ public class MemberDashboardController {
             if (unregisterButton != null) unregisterButton.setDisable(true);
             return;
         }
-        
+
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser == null || !(currentUser instanceof Member)) {
             if (registerButton != null) registerButton.setDisable(true);
             if (unregisterButton != null) unregisterButton.setDisable(true);
             return;
         }
-        
+
         boolean isRegistered = false;
         try {
             isRegistered = attendanceService.isRegisteredForClass(
-                selectedSession.getId(), currentUser.getId()
+                    selectedSession.getId(), currentUser.getId()
             );
         } catch (com.gymflow.exception.DataAccessException e) {
             showErrorDialog("Database error while checking registration status: " + e.getMessage());
@@ -491,7 +491,7 @@ public class MemberDashboardController {
             unregisterButton.setDisable(!isRegistered);
         }
     }
-    
+
     /**
      * Gets the trainer's name from the database.
      */
@@ -507,7 +507,7 @@ public class MemberDashboardController {
         }
         return "Trainer";
     }
-    
+
     /**
      * Gets the workout plan title from the database.
      */
@@ -523,91 +523,59 @@ public class MemberDashboardController {
         return "Unknown";
     }
 
-    private void loadWorkoutPlans() {
+    private void loadWorkoutPlans() throws DataAccessException {
         User currentUser = sessionManager.getCurrentUser();
         if (currentUser instanceof Member) {
             // Clear the map
             workoutToClassMap.clear();
-            
-            // Get direct workout plans assigned to member
+
+            // 1. Get direct workout plans assigned to member
             List<WorkoutPlan> directPlans = java.util.Collections.emptyList();
-            try {
-                directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
-            } catch (com.gymflow.exception.DataAccessException e) {
-                showErrorDialog("Database error while loading workout plans: " + e.getMessage());
-            }
-            
-            // Get workout plans from registered classes and track their source
+            directPlans = workoutService.getWorkoutPlansForMember(currentUser.getId());
+
+            // 2. Get workout plans from registered classes and track their source
             List<WorkoutPlan> classPlans = new java.util.ArrayList<>();
             if (upcomingClasses != null) {
                 for (ClassSession session : upcomingClasses) {
                     boolean registered = false;
                     try {
-                        if (session != null && session.getWorkoutPlanId() != null && 
-                            attendanceService.isRegisteredForClass(session.getId(), currentUser.getId())) {
+                        if (session != null && session.getWorkoutPlanId() != null &&
+                                attendanceService.isRegisteredForClass(session.getId(), currentUser.getId())) {
                             registered = true;
                         }
                     } catch (com.gymflow.exception.DataAccessException e) {
                         showErrorDialog("Database error while checking class registration: " + e.getMessage());
                     }
+
                     if (registered) {
-                        try {
-                            Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
-                            if (plan.isPresent()) {
-                                classPlans.add(plan.get());
-                                // Track which class this workout came from
-                                workoutToClassMap.put(plan.get().getId(), session);
-                            }
-                        } catch (com.gymflow.exception.DataAccessException e) {
-                            showErrorDialog("Database error while loading workout plan: " + e.getMessage());
+                        Optional<WorkoutPlan> plan = workoutService.getWorkoutPlanById(session.getWorkoutPlanId());
+                        if (plan.isPresent()) {
+                            classPlans.add(plan.get());
+                            // Track which class this workout came from
+                            workoutToClassMap.put(plan.get().getId(), session);
                         }
                     }
                 }
             }
-            // ...existing code...
-        }
-        // ...existing code...
-    }
 
-
-                }
-            }
-            // ...existing code...
-        }
-        // ...existing code...
-    }
-
-    /**
-     * Shows an error dialog with the given message.
-     */
-    private void showErrorDialog(String message) {
-        javafx.application.Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-            alert.setHeaderText("Error");
-            alert.showAndWait();
-        });
-    }
-                }
-            }
-            
-            // Combine both lists (avoid duplicates)
+            // 3. Combine both lists (avoid duplicates)
             java.util.Set<Long> planIds = new java.util.HashSet<>();
             List<WorkoutPlan> allPlans = new java.util.ArrayList<>();
-            
+
             for (WorkoutPlan plan : directPlans) {
                 if (!planIds.contains(plan.getId())) {
                     allPlans.add(plan);
                     planIds.add(plan.getId());
                 }
             }
-            
+
             for (WorkoutPlan plan : classPlans) {
                 if (!planIds.contains(plan.getId())) {
                     allPlans.add(plan);
                     planIds.add(plan.getId());
                 }
             }
-            
+
             workoutPlans = FXCollections.observableArrayList(allPlans);
             if (workoutTable != null) {
                 workoutTable.setItems(workoutPlans);
@@ -625,11 +593,11 @@ public class MemberDashboardController {
         if (upcomingClasses == null) {
             upcomingClasses = FXCollections.observableArrayList();
         }
-        
+
         List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
         upcomingClasses.clear();
         upcomingClasses.addAll(sessions);
-        
+
         if (classTable != null) {
             classTable.setItems(upcomingClasses);
             // Refresh the table to update cell values (especially Registered column)
@@ -665,7 +633,7 @@ public class MemberDashboardController {
             }
             // Register
             Optional<com.gymflow.model.AttendanceRecord> result = attendanceService.registerForClass(
-                selectedSession.getId(), currentUser.getId()
+                    selectedSession.getId(), currentUser.getId()
             );
             if (result.isPresent()) {
                 showSuccessAlert("Success", "Successfully registered for '" + selectedSession.getTitle() + "'");
@@ -678,7 +646,7 @@ public class MemberDashboardController {
             showErrorAlert("Database Error", "A database error occurred: " + dae.getMessage());
         }
     }
-    
+
     /**
      * Refreshes the class table to update registration status.
      */
@@ -686,18 +654,18 @@ public class MemberDashboardController {
         // Get the currently selected session ID to restore selection after refresh
         ClassSession selectedSession = classTable.getSelectionModel().getSelectedItem();
         long selectedId = selectedSession != null ? selectedSession.getId() : -1;
-        
+
         // Reload data from database
         List<ClassSession> sessions = classScheduleService.getUpcomingClassSessions();
-        
+
         // Clear and reload - this ensures all cell value factories are re-evaluated
         upcomingClasses.clear();
         upcomingClasses.addAll(sessions);
-        
+
         // Force table refresh - this causes all cell value factories to be re-evaluated
         // The Registered column will check the database again for each row
         classTable.refresh();
-        
+
         // Restore selection by finding the session with the same ID
         if (selectedId > 0) {
             for (int i = 0; i < upcomingClasses.size(); i++) {
@@ -740,7 +708,7 @@ public class MemberDashboardController {
             Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
             if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
                 boolean success = attendanceService.unregisterFromClass(
-                    selectedSession.getId(), currentUser.getId()
+                        selectedSession.getId(), currentUser.getId()
                 );
                 if (success) {
                     showSuccessAlert("Success", "Successfully unregistered from '" + selectedSession.getTitle() + "'");
@@ -766,164 +734,59 @@ public class MemberDashboardController {
         }
     }
 
+    /**
+     * Display an error dialog.
+     */
+    private void showErrorDialog(String message) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+            alert.setHeaderText("Error");
+            alert.showAndWait();
+        });
+    }
+
+    /**
+     * Display an error alert (Alias for showErrorDialog with title support).
+     */
+    private void showErrorAlert(String title, String message) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+
+    /**
+     * Display a success alert.
+     */
+    private void showSuccessAlert(String title, String message) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+
     private void navigateToLogin() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
+            // Assumes you have a LoginView.fxml file. Adjust the path if necessary.
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/gymflow/view/LoginView.fxml"));
             Parent root = loader.load();
-            
+
+            // Get current stage from logout button or other element
             Stage stage = (Stage) logoutButton.getScene().getWindow();
-            Scene scene = new Scene(root, 960, 600);
+            Scene scene = new Scene(root);
+
             stage.setScene(scene);
             stage.setTitle("GymFlow - Login");
-            stage.centerOnScreen();
+            stage.show();
         } catch (IOException e) {
-            showErrorAlert("Navigation Error", "Failed to load login screen: " + e.getMessage());
-            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Exception during navigation to login", e);
+            java.util.logging.Logger.getLogger(MemberDashboardController.class.getName()).log(java.util.logging.Level.SEVERE, "Failed to load Login View", e);
+            showErrorDialog("Could not load login screen.");
         }
-    }
-
-    private void showErrorAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showSuccessAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    @FXML
-    private void handleViewDetails() {
-        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
-        if (selectedPlan == null) {
-            showErrorAlert("No Selection", "Please select a workout plan to view details");
-            return;
-        }
-
-        // Get source class information
-        ClassSession sourceClass = workoutToClassMap.get(selectedPlan.getId());
-        String sourceInfo = sourceClass != null ? "Class: " + sourceClass.getTitle() : "Direct Assignment";
-
-        // Check completion status
-        User currentUser = sessionManager.getCurrentUser();
-        boolean isCompleted = false;
-        if (currentUser != null && currentUser instanceof Member) {
-            isCompleted = completionService.isCompleted(selectedPlan.getId(), currentUser.getId());
-        }
-
-        // Create details dialog
-        StringBuilder details = new StringBuilder();
-        details.append("Title: ").append(selectedPlan.getTitle()).append("\n\n");
-        details.append("Source: ").append(sourceInfo).append("\n\n");
-        if (selectedPlan.getDescription() != null && !selectedPlan.getDescription().isEmpty()) {
-            details.append("Description: ").append(selectedPlan.getDescription()).append("\n\n");
-        }
-        details.append("Difficulty: ").append(selectedPlan.getDifficulty() != null ? selectedPlan.getDifficulty() : "Not specified").append("\n");
-        details.append("Type: ").append(selectedPlan.getWorkoutType() != null ? selectedPlan.getWorkoutType() : "Not specified").append("\n");
-        details.append("Muscle Group: ").append(selectedPlan.getMuscleGroup() != null ? selectedPlan.getMuscleGroup() : "Not specified").append("\n");
-        if (selectedPlan.getDurationMinutes() != null) {
-            details.append("Duration: ").append(selectedPlan.getDurationMinutes()).append(" minutes\n");
-        }
-        if (selectedPlan.getEquipmentNeeded() != null && !selectedPlan.getEquipmentNeeded().isEmpty()) {
-            details.append("Equipment: ").append(selectedPlan.getEquipmentNeeded()).append("\n");
-        }
-        if (selectedPlan.getTargetSets() != null && selectedPlan.getTargetReps() != null) {
-            details.append("Sets x Reps: ").append(selectedPlan.getTargetSets())
-                   .append(" x ").append(selectedPlan.getTargetReps()).append("\n");
-        }
-        if (selectedPlan.getRestSeconds() != null) {
-            details.append("Rest Time: ").append(selectedPlan.getRestSeconds()).append(" seconds\n");
-        }
-        details.append("\nStatus: ").append(isCompleted ? "✓ Completed" : "Pending");
-        if (selectedPlan.getCreatedAt() != null) {
-            details.append("\nCreated: ").append(selectedPlan.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-        }
-
-        Alert detailsAlert = new Alert(Alert.AlertType.INFORMATION);
-        detailsAlert.setTitle("Workout Plan Details");
-        detailsAlert.setHeaderText("Workout Plan: " + selectedPlan.getTitle());
-        detailsAlert.setContentText(details.toString());
-        detailsAlert.getDialogPane().setPrefWidth(500);
-        detailsAlert.showAndWait();
-    }
-
-    @FXML
-    private void handleMarkCompleted() {
-        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
-        if (selectedPlan == null) {
-            showErrorAlert("No Selection", "Please select a workout plan to mark as completed");
-            return;
-        }
-
-        User currentUser = sessionManager.getCurrentUser();
-        if (currentUser == null || !(currentUser instanceof Member)) {
-            showErrorAlert("Error", "No member logged in");
-            return;
-        }
-
-        // Check if already completed
-        if (completionService.isCompleted(selectedPlan.getId(), currentUser.getId())) {
-            showErrorAlert("Already Completed", "This workout plan is already marked as completed");
-            return;
-        }
-
-        // Get source class if applicable
-        ClassSession sourceClass = workoutToClassMap.get(selectedPlan.getId());
-        Long classSessionId = sourceClass != null ? sourceClass.getId() : null;
-
-        // Optional notes dialog
-        TextInputDialog notesDialog = new TextInputDialog();
-        notesDialog.setTitle("Mark Workout as Completed");
-        notesDialog.setHeaderText("Mark '" + selectedPlan.getTitle() + "' as completed");
-        notesDialog.setContentText("Notes (optional):");
-
-        Optional<String> notesResult = notesDialog.showAndWait();
-        String notes = notesResult.orElse("");
-
-        // Mark as completed
-        Optional<com.gymflow.model.WorkoutCompletion> result = completionService.markCompleted(
-            selectedPlan.getId(), currentUser.getId(), classSessionId, notes
-        );
-
-        if (result.isPresent()) {
-            showSuccessAlert("Success", "Workout plan marked as completed!");
-            loadWorkoutPlans(); // Refresh to update status
-        } else {
-            showErrorAlert("Error", "Failed to mark workout as completed");
-        }
-    }
-
-    @FXML
-    private void handleDeleteWorkout() {
-        WorkoutPlan selectedPlan = workoutTable.getSelectionModel().getSelectedItem();
-        if (selectedPlan == null) {
-            showErrorAlert("No Selection", "Please select a workout plan");
-            return;
-        }
-
-        User currentUser = sessionManager.getCurrentUser();
-        if (currentUser == null || !(currentUser instanceof Member)) {
-            showErrorAlert("Error", "No member logged in");
-            return;
-        }
-
-        // Check if workout is from a class
-        ClassSession sourceClass = workoutToClassMap.get(selectedPlan.getId());
-        if (sourceClass != null) {
-            showErrorAlert("Cannot Remove", "This workout plan is from a class. " +
-                          "To remove it from your list, unregister from the class '" + sourceClass.getTitle() + "' in the Class Schedule tab.");
-            return;
-        }
-
-        // For direct assignments, we can't actually delete the workout plan (it belongs to the trainer)
-        // But we can show information about it
-        showErrorAlert("Cannot Remove", "Workout plans are created by trainers and cannot be deleted by members. " +
-                      "If you no longer need this workout plan, please contact your trainer to have it removed.");
     }
 }
